@@ -151,16 +151,6 @@
           min="1"
         />
       </div>
-      <div class="form-group">
-        <label for="discount">Discount (%):</label>
-        <input
-          type="number"
-          id="discount"
-          placeholder="Enter discount percentage"
-          min="0"
-          max="100"
-        />
-      </div>
 
       <!-- AINS Checkbox -->
       <div class="form-group checkbox-container" style="display: flex; align-items: center; white-space: nowrap;">
@@ -185,6 +175,18 @@
           <option value="1080p">1080p</option>
           <option value="4k">4K</option>
         </select>
+      </div>
+
+      <!-- Discount Field -->
+      <div class="form-group">
+        <label for="discount">Discount (%):</label>
+        <input
+          type="number"
+          id="discount"
+          placeholder="Enter discount percentage"
+          min="0"
+          max="100"
+        />
       </div>
 
       <button class="button" onclick="calculatePricing()">Calculate</button>
@@ -357,12 +359,11 @@
 
         const discountedCost = (totalCost + ainsCost) * (1 - discount / 100);
 
-        document.getElementById("result").textContent =
-          discount > 0
-            ? `Estimated Cost after ${discount}% discount: $${discountedCost.toFixed(
-                2
-              )}`
-            : `Estimated Cost: $${discountedCost.toFixed(2)}`;
+        document.getElementById("result").innerHTML =
+          `<p>Aggregate Resolution Tier: ${labelTier}</p>` + 
+          (discount > 0
+            ? `<p>Estimated Cost after ${discount}% discount: $${discountedCost.toFixed(2)}</p>`
+            : `<p>Estimated Cost: $${discountedCost.toFixed(2)}</p>`);
       }
     </script>
   </body>
