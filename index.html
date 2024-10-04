@@ -151,7 +151,6 @@
           min="1"
         />
       </div>
-      <!-- Discount Field -->
       <div class="form-group">
         <label for="discount">Discount (%):</label>
         <input
@@ -162,12 +161,37 @@
           max="100"
         />
       </div>
+
+      <!-- AINS Checkbox -->
+      <div class="form-group checkbox-container" style="display: flex; align-items: center; white-space: nowrap;">
+        <label for="ains" style="flex-grow: 1;">Enable AINS (Additional Cost)</label>
+        <input type="checkbox" id="ains" style="margin-right: 275px;" />
+      </div>
+
+      <!-- Participant Screen Share Checkbox -->
+      <div class="form-group checkbox-container" style="display: flex; align-items: center; white-space: nowrap;">
+        <label for="screenshare" style="flex-grow: 1;">Enable Screenshare</label>
+        <input type="checkbox" id="screenshare" style="margin-right: 200px;" onchange="toggleParticipantResolution()" />
+      </div>
+
+      <!-- Participant Resolution Selection -->
+      <div class="form-group" id="participant-resolution-group" style="display: none;">
+        <label for="participant-resolution">Screenshare Resolution:</label>
+        <select id="participant-resolution">
+          <option value="120p">120p</option>
+          <option value="360p">360p</option>
+          <option value="480p">480p</option>
+          <option value="720p">720p</option>
+          <option value="1080p">1080p</option>
+          <option value="4k">4K</option>
+        </select>
+      </div>
+
       <button class="button" onclick="calculatePricing()">Calculate</button>
       <div class="result" id="result"></div>
 
-      <!-- Disclaimer Section -->
       <p style="margin-top: 20px; text-align: center; color: #555; font-size: 14px;">
-        Disclaimer: This is not an official calculator and may provide incorrect estimates. It does not include host costs.
+        Disclaimer: This is not an official calculator and may provide incorrect estimates. This will overestimate the host cost.
       </p>
     </div>
 
@@ -176,7 +200,7 @@
         const hostEntries = document.querySelectorAll(".host-entry");
         hostEntries.forEach((entry, index) => {
           const label = entry.querySelector("label");
-          label.textContent = "Host " + (index + 1) + ":";
+          label.textContent = "Host " + (index + 1);
         });
       }
 
@@ -212,6 +236,11 @@
         updateHostLabels();
       }
 
+      function toggleParticipantResolution() {
+        const screenshareChecked = document.getElementById("screenshare").checked;
+        document.getElementById("participant-resolution-group").style.display = screenshareChecked ? 'block' : 'none';
+      }
+
       function calculatePricing() {
         const audience =
           parseInt(document.getElementById("audience").value) || 0;
@@ -219,6 +248,9 @@
           parseInt(document.getElementById("duration").value) || 0;
         const discount =
           parseFloat(document.getElementById("discount").value) || 0;
+        const ainsEnabled = document.getElementById("ains").checked;
+        const screenshareEnabled = document.getElementById("screenshare").checked;
+        const participantResolution = document.getElementById("participant-resolution").value;
 
         if (discount < 0 || discount > 100) {
           alert("Please enter a discount percentage between 0 and 100.");
@@ -267,6 +299,30 @@
           totalHostCost += 0; // As per original code, host cost is zero
         });
 
+        // Add participant screen share resolution if enabled
+        if (screenshareEnabled) {
+          switch (participantResolution) {
+            case "120p":
+              aggregatedResolution += 160 * 120;
+              break;
+            case "360p":
+              aggregatedResolution += 480 * 360;
+              break;
+            case "480p":
+              aggregatedResolution += 640 * 480;
+              break;
+            case "720p":
+              aggregatedResolution += 1280 * 720;
+              break;
+            case "1080p":
+              aggregatedResolution += 1920 * 1080;
+              break;
+            case "4k":
+              aggregatedResolution += 3840 * 2160;
+              break;
+          }
+        }
+
         let labelTier = "HD Video";
         let pricingTier = 3.99;
 
@@ -282,9 +338,24 @@
         }
 
         const audienceCost = ((audience * duration) / 1000) * pricingTier;
-        const totalCost = totalHostCost + audienceCost;
 
-        const discountedCost = totalCost * (1 - discount / 100);
+        // Calculate host cost
+        let totalHostCalculation = 0;
+        const numHosts = hostEntries.length;
+        if (numHosts === 1) {
+          // For a single host
+          totalHostCalculation = (duration * numHosts * 0.99) / 1000;
+        } else if (numHosts > 1) {
+          // For multiple hosts based on aggregate resolution
+          totalHostCalculation = ((duration * numHosts) / 1000) * pricingTier;
+        }
+
+        const totalCost = totalHostCalculation + audienceCost;
+
+        // Adding AINS cost if enabled
+        const ainsCost = ainsEnabled ? (0.59 * (audience * duration) / 1000) : 0; // Example: AINS adds $.59 to the total cost
+
+        const discountedCost = (totalCost + ainsCost) * (1 - discount / 100);
 
         document.getElementById("result").textContent =
           discount > 0
