@@ -4,7 +4,7 @@
 
 This project is a simple pricing calculator for estimating the cost of using Agora SDK for video streaming. It allows users to specify the number of hosts, resolution for each host, the number of audience members, and the streaming duration. Additionally, users can apply a discount percentage to calculate a final estimated cost.
 
-> **Disclaimer:** This is not an official calculator and may provide incorrect estimates. It does not include host costs.
+> **Disclaimer:** This is not an official calculator and may provide incorrect estimates. It doesn't include cloud recording, AINS, or other features, you will need to add that separately.
 
 ## Features
 
