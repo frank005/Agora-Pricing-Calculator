@@ -39,17 +39,20 @@
         font-weight: 500;
         color: #555;
       }
+      .text-input {
+        width: 100%;
+      }
       input,
       select {
         padding: 12px 15px;
         border: 1px solid #ddd;
         border-radius: 8px;
-        font-size: 16px;
+        font-size: 14px;
         color: #333;
         outline: none;
         transition: border-color 0.3s;
         box-sizing: border-box;
-        width: 100%;
+        /* width: 100%; */
         margin-top: 8px;
       }
       input:focus,
@@ -78,22 +81,6 @@
         font-size: 20px;
         color: #333;
         font-weight: 500;
-      }
-      .hosts-container {
-        margin-bottom: 20px;
-      }
-      .host-entry {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-      }
-      .host-entry label {
-        margin-right: 10px;
-        width: 70px;
-      }
-      .host-entry select {
-        flex: 1;
-        margin-right: 10px;
       }
       .add-host-btn {
         background: #48bb78;
@@ -124,6 +111,40 @@
       .remove-host-btn:hover {
         background: #c53030;
       }
+      .host-entry {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .host-entry label {
+        margin-right: 10px;
+        width: 70px;
+      }
+      .host-entry select {
+        flex: 1;
+        margin-right: 10px;
+      }
+      /* New CSS for checkbox alignment */
+      .checkbox-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        text-align: left;
+        height: 25px;
+        vertical-align: middle;
+        justify-content: center;
+      }
+      .checkbox-container input[type="checkbox"] {
+        margin: 3px 3px 3px 3px;
+
+        margin-right: 10px;
+      }
+      .checkbox-container label {
+        margin-right: auto;
+      }
+      .checkbox-container select {
+        margin-left: 10px;
+      }
     </style>
   </head>
   <body>
@@ -140,6 +161,7 @@
           id="audience"
           placeholder="Enter number of audience members"
           min="0"
+          class="text-input"
         />
       </div>
       <div class="form-group">
@@ -149,25 +171,45 @@
           id="duration"
           placeholder="Enter duration in minutes"
           min="1"
+          class="text-input"
         />
       </div>
 
       <!-- AINS Checkbox -->
-      <div class="form-group checkbox-container" style="display: flex; align-items: center; white-space: nowrap;">
-        <label for="ains" style="flex-grow: 1;">Enable AINS (Additional Cost)</label>
-        <input type="checkbox" id="ains" style="margin-right: 273px;" />
+      <div class="form-group checkbox-container">
+        <input type="checkbox" id="ains" />
+        <label for="ains">Enable AINS (Additional Cost)</label>
       </div>
 
-      <!-- Participant Screen Share Checkbox -->
-      <div class="form-group checkbox-container" style="display: flex; align-items: center; white-space: nowrap;">
-        <label for="screenshare" style="flex-grow: 1;">Enable Screenshare</label>
-        <input type="checkbox" id="screenshare" style="margin-right: 200px;" onchange="toggleParticipantResolution()" />
+      <!-- Cloud Recording Checkbox -->
+      <div class="form-group checkbox-container">
+        <input type="checkbox" id="cloudrecording" />
+        <label for="cloudrecording">Enable Cloud Recording</label>
       </div>
 
-      <!-- Participant Resolution Selection -->
-      <div class="form-group" id="participant-resolution-group" style="display: none;">
-        <label for="participant-resolution">Screenshare Resolution:</label>
-        <select id="participant-resolution">
+      <!-- Web Page Recording Checkbox with Resolution -->
+      <div class="form-group checkbox-container">
+        <input
+          type="checkbox"
+          id="webrecording"
+          onchange="toggleWebResolution()"
+        />
+        <label for="webrecording">Enable Web Page Recording</label>
+        <select id="web-resolution" style="display: none">
+          <option value="720p">720p</option>
+          <option value="1080p">1080p</option>
+        </select>
+      </div>
+
+      <!-- Participant Screen Share Checkbox with Resolution -->
+      <div class="form-group checkbox-container">
+        <input
+          type="checkbox"
+          id="screenshare"
+          onchange="toggleParticipantResolution()"
+        />
+        <label for="screenshare">Enable Screenshare</label>
+        <select id="participant-resolution" style="display: none">
           <option value="120p">120p</option>
           <option value="360p">360p</option>
           <option value="480p">480p</option>
@@ -186,14 +228,23 @@
           placeholder="Enter discount percentage"
           min="0"
           max="100"
+          class="text-input"
         />
       </div>
 
       <button class="button" onclick="calculatePricing()">Calculate</button>
       <div class="result" id="result"></div>
 
-      <p style="margin-top: 20px; text-align: center; color: #555; font-size: 14px;">
-        Disclaimer: This is not an official calculator and may provide incorrect estimates. This will overestimate the host cost.
+      <p
+        style="
+          margin-top: 20px;
+          text-align: center;
+          color: #555;
+          font-size: 14px;
+        "
+      >
+        Disclaimer: This is not an official calculator and may provide incorrect
+        estimates. This will overestimate the host cost.
       </p>
     </div>
 
@@ -214,12 +265,12 @@
 
         const select = document.createElement("select");
         select.innerHTML = `
-                <option value="120p">120p</option>
-                <option value="360p">360p</option>
-                <option value="480p">480p</option>
-                <option value="720p">720p</option>
-                <option value="1080p">1080p</option>
-                <option value="4k">4K</option>
+              <option value="120p">120p</option>
+              <option value="360p">360p</option>
+              <option value="480p">480p</option>
+              <option value="720p">720p</option>
+              <option value="1080p">1080p</option>
+              <option value="4k">4K</option>
             `;
 
         const removeBtn = document.createElement("button");
@@ -239,25 +290,36 @@
       }
 
       function toggleParticipantResolution() {
-        const screenshareChecked = document.getElementById("screenshare").checked;
-        document.getElementById("participant-resolution-group").style.display = screenshareChecked ? 'block' : 'none';
+        const screenshareChecked =
+          document.getElementById("screenshare").checked;
+        document.getElementById("participant-resolution").style.display =
+          screenshareChecked ? "block" : "none";
+      }
+
+      function toggleWebResolution() {
+        const webRecordingChecked =
+          document.getElementById("webrecording").checked;
+        document.getElementById("web-resolution").style.display =
+          webRecordingChecked ? "block" : "none";
       }
 
       function calculatePricing() {
-        const audience =
-          parseInt(document.getElementById("audience").value) || 0;
+        let audience = parseInt(document.getElementById("audience").value) || 0;
         const duration =
           parseInt(document.getElementById("duration").value) || 0;
         const discount =
           parseFloat(document.getElementById("discount").value) || 0;
         const ainsEnabled = document.getElementById("ains").checked;
-        const screenshareEnabled = document.getElementById("screenshare").checked;
-        const participantResolution = document.getElementById("participant-resolution").value;
-
-        if (discount < 0 || discount > 100) {
-          alert("Please enter a discount percentage between 0 and 100.");
-          return;
-        }
+        const screenshareEnabled =
+          document.getElementById("screenshare").checked;
+        const participantResolution = document.getElementById(
+          "participant-resolution"
+        ).value;
+        const cloudRecordingEnabled =
+          document.getElementById("cloudrecording").checked;
+        const webRecordingEnabled =
+          document.getElementById("webrecording").checked;
+        const webResolution = document.getElementById("web-resolution").value;
 
         const rates = {
           "120p": 0.05,
@@ -268,11 +330,9 @@
           "4k": 0.8,
         };
 
-        let totalHostCost = 0;
-
-        const hostEntries = document.querySelectorAll(".host-entry");
         let aggregatedResolution = 0;
 
+        const hostEntries = document.querySelectorAll(".host-entry");
         hostEntries.forEach((entry) => {
           const select = entry.querySelector("select");
           const resolution = select.value;
@@ -296,12 +356,8 @@
               aggregatedResolution += 3840 * 2160;
               break;
           }
-
-          const rate = rates[resolution] || 0;
-          totalHostCost += 0; // As per original code, host cost is zero
         });
 
-        // Add participant screen share resolution if enabled
         if (screenshareEnabled) {
           switch (participantResolution) {
             case "120p":
@@ -325,45 +381,90 @@
           }
         }
 
-        let labelTier = "HD Video";
-        let pricingTier = 3.99;
+        let labelTier = "Audio";
+        let pricingTier = 0.99;
+        let crPricingTier = 1.49;
 
         if (aggregatedResolution > 3686400) {
           labelTier = "2K+ Video";
           pricingTier = 35.99;
+          crPricingTier = 53.99;
         } else if (aggregatedResolution > 2073600) {
           labelTier = "2K Video";
           pricingTier = 15.99;
+          crPricingTier = 23.99;
         } else if (aggregatedResolution > 921600) {
           labelTier = "Full HD Video";
           pricingTier = 8.99;
+          crPricingTier = 13.49;
+        } else if (aggregatedResolution < 921600 && aggregatedResolution > 0) {
+          labelTier = "HD Video";
+          pricingTier = 3.99;
+          crPricingTier = 5.99;
+        }
+
+        if (hostEntries.length > 1) {
+          audience += hostEntries.length - 1;
         }
 
         const audienceCost = ((audience * duration) / 1000) * pricingTier;
 
-        // Calculate host cost
-        let totalHostCalculation = 0;
-        const numHosts = hostEntries.length;
-        if (numHosts === 1) {
-          // For a single host
-          totalHostCalculation = (duration * numHosts * 0.99) / 1000;
-        } else if (numHosts > 1) {
-          // For multiple hosts based on aggregate resolution
-          totalHostCalculation = ((duration * numHosts) / 1000) * pricingTier;
+        totalHostCalculation = 0;
+
+        if (hostEntries.length === 1) {
+          totalHostCalculation = (duration / 1000) * 0.99;
+        } else if (hostEntries.length > 1) {
+          totalHostCalculation =
+            ((duration * (hostEntries.length - 1)) / 1000) * pricingTier;
         }
 
         const totalCost = totalHostCalculation + audienceCost;
+        const cloudRecordingCost = cloudRecordingEnabled
+          ? (duration / 1000) * crPricingTier
+          : 0;
 
-        // Adding AINS cost if enabled
-        const ainsCost = ainsEnabled ? (0.59 * (audience * duration) / 1000) : 0; // Example: AINS adds $.59 to the total cost
+        // Web Recording cost based on resolution
+        let webRecordingCost = 0;
+        if (webRecordingEnabled) {
+          webRecordingCost =
+            (duration / 1000) * (webResolution === "720p" ? 14 : 28);
+        }
 
-        const discountedCost = (totalCost + ainsCost) * (1 - discount / 100);
+        const ainsCost = ainsEnabled
+          ? (0.59 * (audience * duration)) / 1000
+          : 0;
+        let finalCost =
+          totalCost + cloudRecordingCost + webRecordingCost + ainsCost;
+
+        // Logging costs and stuff
+        console.log("Final Cost: " + finalCost);
+        console.log("Total Host Calculation: " + totalHostCalculation);
+        console.log("Total Cost: " + totalCost);
+        console.log(
+          "Audience Cost: " +
+            audienceCost +
+            " Cloud Recording Cost: " +
+            cloudRecordingCost +
+            " Webpage Recording Cost " +
+            webRecordingCost +
+            " AINS Cost " +
+            ainsCost
+        );
+        // Apply discount
+        if (discount > 0 && discount <= 100) {
+          finalCost *= 1 - discount / 100;
+        } else if (discount < 0 || discount > 100) {
+          alert("Please enter a discount percentage between 0 and 100.");
+          return;
+        }
 
         document.getElementById("result").innerHTML =
-          `<p>Aggregate Resolution Tier: ${labelTier}</p>` + 
+          `<p>Aggregate Resolution Tier: ${labelTier}</p>` +
           (discount > 0
-            ? `<p>Estimated Cost after ${discount}% discount: $${discountedCost.toFixed(2)}</p>`
-            : `<p>Estimated Cost: $${discountedCost.toFixed(2)}</p>`);
+            ? `<p>Estimated Cost after ${discount}% discount: $${finalCost.toFixed(
+                2
+              )}</p>`
+            : `<p>Estimated Cost: $${finalCost.toFixed(2)}</p>`);
       }
     </script>
   </body>
