@@ -19,7 +19,9 @@ let tierDiscounts = {
     bs2k: 0,
     bs2kplus: 0,
     cloudRecording: 0,
-    webRecording: 0
+    webRecording: 0,
+    transcription: 0,
+    translation: 0
 };
 
 function updateHostLabels() {
@@ -102,6 +104,8 @@ function calculatePricing() {
     const webResolution =
         document.getElementById("web-resolution").value;
     const bsAudience = document.getElementById("bs-audience").checked;
+    const transcriptionEnabled = document.getElementById("transcription").checked;
+    const translationEnabled = document.getElementById("translation").checked && transcriptionEnabled;
 
     const rates = {
         "120p": 0.05,
@@ -396,66 +400,17 @@ function calculatePricing() {
     }
 
     // Calculate audience aggregate (all hosts + screenshare if enabled)
-    hostEntries.forEach((entry) => {
-        const select = entry.querySelector("select");
-        const resolution = select.value;
-        switch (resolution) {
-            case "120p":
-                audienceAggregatedResolution += 160 * 120;
-                break;
-            case "360p":
-                audienceAggregatedResolution += 640 * 360;
-                break;
-            case "480p":
-                audienceAggregatedResolution += 640 * 480;
-                break;
-            case "540p":
-                audienceAggregatedResolution += 960 * 540;
-                break;
-            case "720p":
-                audienceAggregatedResolution += 1280 * 720;
-                break;
-            case "1080p":
-                audienceAggregatedResolution += 1920 * 1080;
-                break;
-            case "4k":
-                audienceAggregatedResolution += 3840 * 2160;
-                break;
-        }
-    });
-    if (screenshareEnabled) {
-        switch (participantResolution) {
-            case "120p":
-                audienceAggregatedResolution += 160 * 120;
-                break;
-            case "360p":
-                audienceAggregatedResolution += 640 * 360;
-                break;
-            case "480p":
-                audienceAggregatedResolution += 640 * 480;
-                break;
-            case "540p":
-                audienceAggregatedResolution += 960 * 540;
-                break;
-            case "720p":
-                audienceAggregatedResolution += 1280 * 720;
-                break;
-            case "1080p":
-                audienceAggregatedResolution += 1920 * 1080;
-                break;
-            case "4k":
-                audienceAggregatedResolution += 3840 * 2160;
-                break;
-        }
-    }
+    // REMOVE the second hostEntries loop and screenshare addition for audienceAggregatedResolution
+    // Only count each host and screenshare once (already done above)
 
     const totalCost = totalHostCalculation + audienceCost;
     
     // Cloud recording cost based on aggregate resolution of all participants
     let cloudRecordingCost = 0;
     if (cloudRecordingEnabled) {
-        // Calculate total aggregate resolution for cloud recording
-        const totalAggregateResolution = hostAggregatedResolution + audienceAggregatedResolution;
+        // Use only audienceAggregatedResolution for cloud recording
+        const totalAggregateResolution = audienceAggregatedResolution;
+        console.log('DEBUG: Cloud Recording aggregate for tier check:', totalAggregateResolution);
         let crPricingTier = 0;
         
         if (totalAggregateResolution > 3686400) {
@@ -484,6 +439,28 @@ function calculatePricing() {
     const ainsCost = ainsEnabled
         ? (0.59 * (hostEntries.length * duration)) / 1000
         : 0;
+
+    // Calculate transcription and translation costs
+    let transcriptionCost = 0;
+    let translationCost = 0;
+    if (transcriptionEnabled) {
+        transcriptionCost = (16.99 * hostEntries.length * duration) / 1000;
+    }
+    if (translationEnabled) {
+        translationCost = (8.99 * hostEntries.length * duration) / 1000;
+    }
+    // Apply discounts
+    let transcriptionDiscount = 0;
+    let translationDiscount = 0;
+    if (advancedDiscountsEnabled) {
+        transcriptionDiscount = tierDiscounts.transcription || 0;
+        translationDiscount = tierDiscounts.translation || 0;
+    } else {
+        transcriptionDiscount = parseFloat(document.getElementById("transcription-discount")?.value) || 0;
+        translationDiscount = parseFloat(document.getElementById("translation-discount")?.value) || 0;
+    }
+    let discountedTranscriptionCost = transcriptionCost * (1 - transcriptionDiscount / 100);
+    let discountedTranslationCost = translationCost * (1 - translationDiscount / 100);
 
     // Apply tier-based discounts for hosts and audience
     let discountedTotalCost = 0;
@@ -542,7 +519,7 @@ function calculatePricing() {
         return;
     }
 
-    let finalCost = discountedTotalCost + discountedCloudRecordingCost + discountedWebRecordingCost + discountedAinsCost;
+    let finalCost = discountedTotalCost + discountedCloudRecordingCost + discountedWebRecordingCost + discountedAinsCost + discountedTranscriptionCost + discountedTranslationCost;
 
     // 1. Add screenshare audio cost to totalHostCalculation and finalCost
     let screenshareAudioCost = 0;
@@ -580,20 +557,27 @@ function calculatePricing() {
     document.getElementById("result").innerHTML = resultHTML;
 
     // Store total breakdown
+    console.log('DEBUG: Storing totalAggregateResolution in totalBreakdown:', audienceAggregatedResolution);
     totalBreakdown = {
         totalHostCost: totalHostCalculation,
         totalAudienceCost: audienceCost,
         cloudRecordingCost: cloudRecordingCost,
         webRecordingCost: webRecordingCost,
         ainsCost: ainsCost,
+        transcriptionCost: transcriptionCost,
+        translationCost: translationCost,
+        discountedTranscriptionCost: discountedTranscriptionCost,
+        discountedTranslationCost: discountedTranslationCost,
         totalCost: totalCost,
         finalCost: finalCost,
         duration: duration,
         rtcDiscount: rtcDiscount,
         recordingDiscount: recordingDiscount,
+        transcriptionDiscount: transcriptionDiscount,
+        translationDiscount: translationDiscount,
         screenshareEnabled: screenshareEnabled,
         screenshareResolution: participantResolution,
-        totalAggregateResolution: hostAggregatedResolution + audienceAggregatedResolution
+        totalAggregateResolution: audienceAggregatedResolution // FIXED: only audience, not host+audience
     };
 }
 
@@ -730,9 +714,9 @@ function showDetails() {
             <span class="detail-label">AINS (AI Noise Suppression)</span>
             <span class="detail-value">$${discountedAinsCost.toFixed(2)}</span>
         </div>`;
-        content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666;">
+        content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666; background: none; font-weight: normal;">
             <span class="detail-label">Applied to: ${hostDetails.length} hosts</span>
-            <span class="detail-value">$0.59/1,000 min per host</span>
+            <span style="margin-left: 12px; background: #f3f4f6; color: #555; font-size: 12px; font-weight: 500; border-radius: 12px; padding: 2px 10px; border-left: 3px solid #667eea;">$0.59/1,000 min per host</span>
         </div>`;
         if (ainsDiscountApplied > 0) {
             content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #28a745;">
@@ -742,7 +726,46 @@ function showDetails() {
         }
     }
     
-    if (totalBreakdown.cloudRecordingCost === 0 && totalBreakdown.webRecordingCost === 0 && totalBreakdown.ainsCost === 0) {
+    if (totalBreakdown.discountedTranscriptionCost > 0) {
+        content += `<div class="detail-item">
+            <span class="detail-label">Real-Time Speech-To-Text (Transcription)</span>
+            <span class="detail-value">$${totalBreakdown.discountedTranscriptionCost.toFixed(2)}</span>
+        </div>`;
+        content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666; background: none; font-weight: normal;">
+            <span class="detail-label">Applied to: ${hostDetails.length} hosts</span>
+            <span style="margin-left: 12px; background: #f3f4f6; color: #555; font-size: 12px; font-weight: 500; border-radius: 12px; padding: 2px 10px; border-left: 3px solid #667eea;">$16.99/1,000 min per host</span>
+        </div>`;
+        if (totalBreakdown.transcriptionDiscount > 0) {
+            content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #28a745;">
+                <span class="detail-label">Discount Applied: ${totalBreakdown.transcriptionDiscount}%</span>
+                <span class="detail-value">-$${(totalBreakdown.transcriptionCost - totalBreakdown.discountedTranscriptionCost).toFixed(2)}</span>
+            </div>`;
+        }
+    }
+    if (totalBreakdown.discountedTranslationCost > 0) {
+        content += `<div class="detail-item">
+            <span class="detail-label">Translation</span>
+            <span class="detail-value">$${totalBreakdown.discountedTranslationCost.toFixed(2)}</span>
+        </div>`;
+        content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666; background: none; font-weight: normal;">
+            <span class="detail-label">Applied to: ${hostDetails.length} hosts</span>
+            <span style="margin-left: 12px; background: #f3f4f6; color: #555; font-size: 12px; font-weight: 500; border-radius: 12px; padding: 2px 10px; border-left: 3px solid #667eea;">$8.99/1,000 min per host</span>
+        </div>`;
+        if (totalBreakdown.translationDiscount > 0) {
+            content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #28a745;">
+                <span class="detail-label">Discount Applied: ${totalBreakdown.translationDiscount}%</span>
+                <span class="detail-value">-$${(totalBreakdown.translationCost - totalBreakdown.discountedTranslationCost).toFixed(2)}</span>
+            </div>`;
+        }
+    }
+    
+    if (
+        totalBreakdown.cloudRecordingCost === 0 &&
+        totalBreakdown.webRecordingCost === 0 &&
+        totalBreakdown.ainsCost === 0 &&
+        totalBreakdown.discountedTranscriptionCost === 0 &&
+        totalBreakdown.discountedTranslationCost === 0
+    ) {
         content += `<div class="detail-item">
             <span class="detail-label">No additional services enabled</span>
             <span class="detail-value">$0.00</span>
@@ -810,6 +833,22 @@ function showDetails() {
             content += `<div class="detail-item" style="padding-left: 20px; color: #28a745;"><span class="detail-label">AINS Discount</span><span class="detail-value">-$${(summaryOriginalAinsCost-summaryDiscountedAinsCost).toFixed(2)}</span></div>`;
         }
         content += `<div class="detail-item" style="padding-left: 20px;"><span class="detail-label">AINS Final</span><span class="detail-value">$${summaryDiscountedAinsCost.toFixed(2)}</span></div>`;
+    }
+    // Transcription summary
+    if (totalBreakdown.transcriptionCost > 0) {
+        content += `<div class="detail-item"><span class="detail-label">Transcription</span><span class="detail-value">$${totalBreakdown.transcriptionCost.toFixed(2)}</span></div>`;
+        if (totalBreakdown.transcriptionCost !== totalBreakdown.discountedTranscriptionCost) {
+            content += `<div class="detail-item" style="padding-left: 20px; color: #28a745;"><span class="detail-label">Discount Applied</span><span class="detail-value">-$${(totalBreakdown.transcriptionCost-totalBreakdown.discountedTranscriptionCost).toFixed(2)}</span></div>`;
+        }
+        content += `<div class="detail-item" style="padding-left: 20px;"><span class="detail-label">Transcription Final</span><span class="detail-value">$${totalBreakdown.discountedTranscriptionCost.toFixed(2)}</span></div>`;
+    }
+    // Translation summary
+    if (totalBreakdown.translationCost > 0) {
+        content += `<div class="detail-item"><span class="detail-label">Translation</span><span class="detail-value">$${totalBreakdown.translationCost.toFixed(2)}</span></div>`;
+        if (totalBreakdown.translationCost !== totalBreakdown.discountedTranslationCost) {
+            content += `<div class="detail-item" style="padding-left: 20px; color: #28a745;"><span class="detail-label">Discount Applied</span><span class="detail-value">-$${(totalBreakdown.translationCost-totalBreakdown.discountedTranslationCost).toFixed(2)}</span></div>`;
+        }
+        content += `<div class="detail-item" style="padding-left: 20px;"><span class="detail-label">Translation Final</span><span class="detail-value">$${totalBreakdown.discountedTranslationCost.toFixed(2)}</span></div>`;
     }
     // Screenshare audio breakdown
     if (totalBreakdown.screenshareEnabled) {
@@ -1119,7 +1158,7 @@ function updateTierDiscounts() {
     const discountInputs = [
         'audio-discount', 'hd-discount', 'fullhd-discount', '2k-discount', '2kplus-discount',
         'ains-discount', 'bs-audio-discount', 'bs-hd-discount', 'bs-fullhd-discount', 
-        'bs-2k-discount', 'bs-2kplus-discount'
+        'bs-2k-discount', 'bs-2kplus-discount', 'transcription-discount', 'translation-discount'
     ];
     discountInputs.forEach(inputId => {
         const input = document.getElementById(inputId);
@@ -1144,6 +1183,8 @@ function saveAdvancedDiscounts() {
     tierDiscounts.bsFullhd = parseFloat(document.getElementById("bs-fullhd-discount").value) || 0;
     tierDiscounts.bs2k = parseFloat(document.getElementById("bs-2k-discount").value) || 0;
     tierDiscounts.bs2kplus = parseFloat(document.getElementById("bs-2kplus-discount").value) || 0;
+    tierDiscounts.transcription = parseFloat(document.getElementById("transcription-discount").value) || 0;
+    tierDiscounts.translation = parseFloat(document.getElementById("translation-discount").value) || 0;
     // Save tier-based recording discounts
     tierDiscounts.cloudAudio = parseFloat(document.getElementById("cloud-audio-discount").value) || 0;
     tierDiscounts.cloudHd = parseFloat(document.getElementById("cloud-hd-discount").value) || 0;

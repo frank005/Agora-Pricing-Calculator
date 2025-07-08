@@ -87,6 +87,20 @@
                 </select>
             </div>
 
+            <!-- Real-Time Speech-To-Text Checkbox -->
+            <div class="form-group checkbox-container">
+                <input type="checkbox" id="transcription" onchange="toggleTranslationOption()" />
+                <label for="transcription">Enable Real-Time Speech-To-Text</label>
+            </div>
+            <!-- Translation Checkbox (hidden unless transcription is checked) -->
+            <div class="form-group checkbox-container" id="translation-container" style="display: none; margin-left: 24px;">
+                <input type="checkbox" id="translation" />
+                <label for="translation">Enable Translation (Additional Cost)</label>
+            </div>
+            <div style="margin-bottom: 10px; margin-top: -10px; font-size: 13px; color: #b83232; background: #fff5f5; border-left: 4px solid #b83232; padding: 8px 12px; border-radius: 6px;">
+                <strong>Note:</strong> STT and Translation costs are calculated for all host minutes. Muting a host does <u>not</u> stop billing; only unpublishing the audio/video stream will stop minutes from counting towards cost.
+            </div>
+
             <!-- Discount Fields -->
             <div class="form-group" style="display: flex; gap: 15px;">
                 <div style="flex: 1;">
@@ -133,18 +147,11 @@
                 </button>
             </div>
             <div class="result" id="result"></div>
-
-            <p
-                style="
-                    margin-top: 20px;
-                    text-align: center;
-                    color: #555;
-                    font-size: 14px;
-                "
-            >
-                Disclaimer: This is not an official calculator and may provide
-                incorrect estimates. This will overestimate the host cost.
-            </p>
+            <div style="margin-bottom: 10px; margin-top: -10px; font-size: 13px; color: #b83232; background: #fff5f5; border-left: 4px solid #b83232; padding: 8px 12px; border-radius: 6px;">
+                
+                    <strong>Disclaimer:</strong> This is not an official calculator and may provide
+                    incorrect estimates. 
+            </div>
         </div>
 
         <!-- Details Popup -->
@@ -246,6 +253,23 @@
                             <span class="tier-info">Base: $0.59/1,000 min per host</span>
                         </div>
                     </div>
+                    <!-- Transcription Discount -->
+                    <div class="discount-section">
+                        <h4>Transcription & Translation Discounts</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+                            Set discounts for Real-Time Speech-To-Text and Translation services.
+                        </p>
+                        <div class="tier-discount-item">
+                            <label for="transcription-discount">Transcription:</label>
+                            <input type="number" id="transcription-discount" placeholder="0" min="0" max="100" class="text-input" />
+                            <span class="tier-info">Base: $16.99/1,000 min per host</span>
+                        </div>
+                        <div class="tier-discount-item">
+                            <label for="translation-discount">Translation:</label>
+                            <input type="number" id="translation-discount" placeholder="0" min="0" max="100" class="text-input" />
+                            <span class="tier-info">Base: $8.99/1,000 min per host</span>
+                        </div>
+                    </div>
                     <div id="bs-discount-section" class="discount-section">
                         <h4>Broadcast Streaming Audience Discounts</h4>
                         <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
@@ -342,6 +366,13 @@ function updateBSDiscountSection() {
     var bsAudience = document.getElementById('bs-audience');
     if (bsSection && bsAudience) {
         bsSection.style.display = bsAudience.checked ? '' : 'none';
+    }
+}
+function toggleTranslationOption() {
+    var transcription = document.getElementById('transcription');
+    var translationContainer = document.getElementById('translation-container');
+    if (transcription && translationContainer) {
+        translationContainer.style.display = transcription.checked ? '' : 'none';
     }
 }
 // Call this when opening the modal
