@@ -440,10 +440,19 @@ function calculatePricing() {
 
     // Web Recording cost based on resolution
     let webRecordingCost = 0;
+    let webRecordingTierName = '';
     if (webRecordingEnabled) {
-        webRecordingCost =
-            (duration / 1000) *
-            (webResolution === "720p" ? 14 : 28);
+        if (webResolution === "720p") {
+            webRecordingCost = (duration / 1000) * 14;
+            webRecordingTierName = 'HD Video';
+        } else if (webResolution === "1080p") {
+            webRecordingCost = (duration / 1000) * 28;
+            webRecordingTierName = 'Full HD Video';
+        } else {
+            // fallback, treat as HD
+            webRecordingCost = (duration / 1000) * 14;
+            webRecordingTierName = 'HD Video';
+        }
     }
 
     const ainsCost = ainsEnabled
@@ -478,71 +487,58 @@ function calculatePricing() {
     let discountedTranslationCost = translationCost * (1 - translationDiscount / 100);
     // LID cost is not discounted
 
-    // Apply tier-based discounts for hosts and audience
-    let discountedTotalCost = 0;
-    let discountedAinsCost = 0;
-    
-    // Apply individual tier discounts to hosts
+    // Calculate discounted totals for hosts (including screenshare audio)
+    let discountedHostTotal = 0;
     hostDetails.forEach(host => {
         const tierDiscount = getDiscountForTier(host.tierName || 'Audio');
         const discountedHostCost = host.cost * (1 - tierDiscount / 100);
-        discountedTotalCost += discountedHostCost;
-        
-        // Update host details with discounted cost
+        discountedHostTotal += discountedHostCost;
         host.discountedCost = discountedHostCost;
         host.discountApplied = tierDiscount;
     });
-    
+    // Add discounted screenshare audio if enabled
+    let discountedScreenshareAudio = 0;
+    if (screenshareEnabled) {
+        const screenshareDiscount = getDiscountForTier('Audio');
+        discountedScreenshareAudio = ((duration / 1000) * 0.99) * (1 - screenshareDiscount / 100);
+        discountedHostTotal += discountedScreenshareAudio;
+    }
+
     // Apply individual tier discount to audience
     const audienceTierDiscount = getDiscountForTier(audienceDetails.tierName || 'Audio', bsAudience);
     const discountedAudienceCost = audienceCost * (1 - audienceTierDiscount / 100);
-    discountedTotalCost += discountedAudienceCost;
-    
-    // Update audience details with discounted cost
     audienceDetails.discountedCost = discountedAudienceCost;
     audienceDetails.discountApplied = audienceTierDiscount;
-    
+
     // Apply AINS discount
+    let discountedAinsCost = 0;
     if (ainsEnabled) {
         const ainsTierDiscount = advancedDiscountsEnabled ? tierDiscounts.ains : rtcDiscount;
         discountedAinsCost = ainsCost * (1 - ainsTierDiscount / 100);
-    }
-    
-    // Validate discount percentages (allow 0-100%)
-    if (rtcDiscount < 0 || rtcDiscount > 100) {
-        alert("Please enter a RTC/AINS discount percentage between 0 and 100.");
-        return;
     }
 
     // Apply recording discount
     let discountedCloudRecordingCost = cloudRecordingCost;
     let discountedWebRecordingCost = webRecordingCost;
-    
     const cloudRecordingDiscount = getRecordingDiscount('cloud', audienceDetails.tierName);
-    const webRecordingDiscount = getRecordingDiscount('web', audienceDetails.tierName);
-    
+    const webRecordingDiscount = getRecordingDiscount('web', webRecordingTierName);
     if (cloudRecordingDiscount >= 0 && cloudRecordingDiscount <= 100) {
         discountedCloudRecordingCost = cloudRecordingCost * (1 - cloudRecordingDiscount / 100);
-    } else if (cloudRecordingDiscount < 0 || cloudRecordingDiscount > 100) {
-        alert("Please enter a cloud recording discount percentage between 0 and 100.");
-        return;
     }
-    
     if (webRecordingDiscount >= 0 && webRecordingDiscount <= 100) {
         discountedWebRecordingCost = webRecordingCost * (1 - webRecordingDiscount / 100);
-    } else if (webRecordingDiscount < 0 || webRecordingDiscount > 100) {
-        alert("Please enter a web recording discount percentage between 0 and 100.");
-        return;
     }
 
-    let finalCost = discountedTotalCost + discountedCloudRecordingCost + discountedWebRecordingCost + discountedAinsCost + discountedTranscriptionCost + discountedTranslationCost + lidCost;
-
-    // 1. Add screenshare audio cost to totalHostCalculation and finalCost
-    let screenshareAudioCost = 0;
-    if (screenshareEnabled) {
-        screenshareAudioCost = (duration / 1000) * 0.99;
-        totalHostCalculation += screenshareAudioCost;
-    }
+    // Calculate finalCost to match summary logic
+    let finalCost = discountedHostTotal
+        + discountedAudienceCost
+        + discountedCloudRecordingCost
+        + discountedWebRecordingCost
+        + discountedAinsCost
+        + discountedTranscriptionCost
+        + lidCost
+        + discountedTranslationCost;
+    finalCost = ceil2(finalCost);
 
     // Logging costs and stuff
     console.log("Host Aggregate Resolution: " + hostAggregatedResolution);
@@ -552,7 +548,7 @@ function calculatePricing() {
     console.log("Final Cost: " + finalCost);
     console.log("Total Host Calculation: " + totalHostCalculation);
     console.log("Total Cost: " + totalCost);
-    console.log("Discounted Total Cost: " + discountedTotalCost);
+    console.log("Discounted Total Cost: " + discountedHostTotal);
     console.log(
         "Audience Cost: " +
             audienceCost +
@@ -596,7 +592,8 @@ function calculatePricing() {
         translationDiscount: translationDiscount,
         screenshareEnabled: screenshareEnabled,
         screenshareResolution: participantResolution,
-        totalAggregateResolution: audienceAggregatedResolution // FIXED: only audience, not host+audience
+        totalAggregateResolution: audienceAggregatedResolution, // FIXED: only audience, not host+audience
+        webRecordingTierName: webRecordingTierName
     };
 }
 
@@ -658,22 +655,23 @@ function showDetails() {
     
     content += `<div class="detail-item">
         <span class="detail-label">Audience Members (${audienceDetails.count})</span>
-        <span class="detail-value">$${discountedAudienceCost.toFixed(2)}</span>
+        <span class="detail-value">$${originalAudienceCost.toFixed(2)}</span>
     </div>`;
-    content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666;">
-        <span class="detail-label">Aggregate: ${audienceDetails.aggregatePixels.toLocaleString()} px (${audienceDetails.tierName})</span>
-        <span class="detail-value">$${audienceDetails.pricingTier}/1,000 min (${audienceDetails.pricingMode})</span>
-    </div>`;
+    // Compact, inline discount row (only if discount applied)
     if (audienceDiscountApplied > 0) {
         content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #28a745;">
             <span class="detail-label">Discount Applied: ${audienceDiscountApplied}%</span>
             <span class="detail-value">-$${(originalAudienceCost - discountedAudienceCost).toFixed(2)}</span>
         </div>`;
     }
-    
+    // Aggregate and tier info in a single row
+    content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666;">
+        <span class="detail-label">Aggregate: ${audienceDetails.aggregatePixels.toLocaleString()} px (${audienceDetails.tierName})</span>
+        <span class="detail-value">$${audienceDetails.pricingTier}/1,000 min (${audienceDetails.pricingMode})</span>
+    </div>`;
     // Add screenshare information if enabled
     if (totalBreakdown.screenshareEnabled) {
-        content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666;">
+        content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666; background: #f8f9fa; border-radius: 6px; margin-top: 6px;">
             <span class="detail-label">Includes Screenshare: ${totalBreakdown.screenshareResolution}</span>
             <span class="detail-value"></span>
         </div>`;
@@ -707,7 +705,7 @@ function showDetails() {
     
     if (totalBreakdown.webRecordingCost > 0) {
         const originalWebCost = totalBreakdown.webRecordingCost;
-        const webDiscount = getRecordingDiscount('web', audienceDetails.tierName);
+        const webDiscount = getRecordingDiscount('web', totalBreakdown.webRecordingTierName);
         const discountedWebCost = originalWebCost * (1 - webDiscount / 100);
         
         content += `<div class="detail-item">
@@ -752,7 +750,7 @@ function showDetails() {
         </div>`;
         content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666; background: none; font-weight: normal;">
             <span class="detail-label">Applied to: ${hostDetails.length} hosts, ${totalBreakdown.transcriptionLanguages} language${totalBreakdown.transcriptionLanguages > 1 ? 's' : ''}</span>
-            <span style="margin-left: 12px; background: #f3f4f6; color: #555; font-size: 12px; font-weight: 500; border-radius: 12px; padding: 2px 10px; border-left: 3px solid #667eea;">$16.99/1,000 min per hos</span>
+            <span style="margin-left: 12px; background: #f3f4f6; color: #555; font-size: 12px; font-weight: 500; border-radius: 12px; padding: 2px 10px; border-left: 3px solid #667eea;">$16.99/1,000 min per host</span>
         </div>`;
         if (totalBreakdown.transcriptionLanguages >= 2 && totalBreakdown.lidCost > 0) {
             content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #b83232; background: none; font-weight: normal;">
@@ -807,17 +805,6 @@ function showDetails() {
     // Helper for rounding down to nearest cent
     function floor2(val) { return Math.floor(val * 100) / 100; }
 
-    // Calculate discounted totals
-    const summaryDiscountedHostCost = floor2(hostDetails.reduce((sum, host) => sum + (host.discountedCost || host.cost), 0));
-    const summaryOriginalHostCost = floor2(hostDetails.reduce((sum, host) => sum + (host.cost || 0), 0));
-    const summaryDiscountedAudienceCost = floor2(audienceDetails.discountedCost || audienceDetails.cost);
-    const summaryOriginalAudienceCost = floor2(audienceDetails.cost);
-    const summaryOriginalCloudCost = floor2(totalBreakdown.cloudRecordingCost || 0);
-    const summaryDiscountedCloudCost = (totalBreakdown.cloudRecordingCost > 0) ? (function() { const d = getRecordingDiscount('cloud', audienceDetails.tierName || 'Audio'); return floor2(summaryOriginalCloudCost * (1 - d / 100)); })() : 0;
-    const summaryOriginalWebCost = floor2(totalBreakdown.webRecordingCost || 0);
-    const summaryDiscountedWebCost = (totalBreakdown.webRecordingCost > 0) ? (function() { const d = getRecordingDiscount('web', audienceDetails.tierName || 'Audio'); return floor2(summaryOriginalWebCost * (1 - d / 100)); })() : 0;
-    const summaryOriginalAinsCost = floor2(totalBreakdown.ainsCost || 0);
-    const summaryDiscountedAinsCost = (totalBreakdown.ainsCost > 0) ? (function() { const d = advancedDiscountsEnabled ? tierDiscounts.ains : totalBreakdown.rtcDiscount; return floor2(summaryOriginalAinsCost * (1 - d / 100)); })() : 0;
     // Screenshare audio
     let screenshareAudioCost = 0;
     let screenshareAudioDiscounted = 0;
@@ -829,11 +816,43 @@ function showDetails() {
         screenshareAudioDiscount = floor2(screenshareAudioCost - screenshareAudioDiscounted);
     }
 
+    // Calculate discounted totals
+    let summaryDiscountedHostCost = 0;
+    let summaryOriginalHostCost = 0;
+    for (const host of hostDetails) {
+        summaryOriginalHostCost += host.cost || 0;
+        summaryDiscountedHostCost += host.discountedCost || host.cost || 0;
+    }
+    // Add screenshare audio (undiscounted and discounted) if enabled
+    if (totalBreakdown.screenshareEnabled) {
+        summaryOriginalHostCost += screenshareAudioCost;
+        summaryDiscountedHostCost += screenshareAudioDiscounted;
+    }
+    summaryOriginalHostCost = floor2(summaryOriginalHostCost);
+    summaryDiscountedHostCost = floor2(summaryDiscountedHostCost);
+    const summaryDiscountedAudienceCost = floor2(audienceDetails.discountedCost || audienceDetails.cost);
+    const summaryOriginalAudienceCost = floor2(audienceDetails.cost);
+    const summaryOriginalCloudCost = floor2(totalBreakdown.cloudRecordingCost || 0);
+    const summaryDiscountedCloudCost = (totalBreakdown.cloudRecordingCost > 0) ? (function() { const d = getRecordingDiscount('cloud', audienceDetails.tierName || 'Audio'); return floor2(summaryOriginalCloudCost * (1 - d / 100)); })() : 0;
+    const summaryOriginalWebCost = floor2(totalBreakdown.webRecordingCost || 0);
+    const summaryDiscountedWebCost = (totalBreakdown.webRecordingCost > 0) ? (function() { const d = getRecordingDiscount('web', totalBreakdown.webRecordingTierName || 'Audio'); return floor2(summaryOriginalWebCost * (1 - d / 100)); })() : 0;
+    const summaryOriginalAinsCost = floor2(totalBreakdown.ainsCost || 0);
+    const summaryDiscountedAinsCost = (totalBreakdown.ainsCost > 0) ? (function() { const d = advancedDiscountsEnabled ? tierDiscounts.ains : totalBreakdown.rtcDiscount; return floor2(summaryOriginalAinsCost * (1 - d / 100)); })() : 0;
+
     content += `<div class="detail-item"><span class="detail-label">Host Cost</span><span class="detail-value">$${summaryOriginalHostCost.toFixed(2)}</span></div>`;
     if (summaryOriginalHostCost !== summaryDiscountedHostCost) {
         content += `<div class="detail-item" style="padding-left: 20px; color: #28a745;"><span class="detail-label">Host Discount</span><span class="detail-value">-$${(summaryOriginalHostCost-summaryDiscountedHostCost).toFixed(2)}</span></div>`;
     }
     content += `<div class="detail-item" style="padding-left: 20px;"><span class="detail-label">Host Final</span><span class="detail-value">$${summaryDiscountedHostCost.toFixed(2)}</span></div>`;
+
+    // Show screenshare audio for clarity, but note it's included in Host Final
+    if (totalBreakdown.screenshareEnabled) {
+        content += `<div class="detail-item"><span class="detail-label">Screenshare Audio <span style='font-size:11px;color:#888;'>(included in Host Final)</span></span><span class="detail-value"></span></div>`;
+        if (screenshareAudioDiscount > 0) {
+            content += `<div class="detail-item" style="padding-left: 20px; color: #28a745;"><span class="detail-label">Screenshare Discount</span><span class="detail-value">-$${screenshareAudioDiscount.toFixed(2)}</span></div>`;
+        }
+        content += `<div class="detail-item" style="padding-left: 20px;"><span class="detail-label">Screenshare Final</span><span class="detail-value">$${screenshareAudioDiscounted.toFixed(2)}</span></div>`;
+    }
 
     content += `<div class="detail-item"><span class="detail-label">Audience Cost</span><span class="detail-value">$${summaryOriginalAudienceCost.toFixed(2)}</span></div>`;
     if (summaryOriginalAudienceCost !== summaryDiscountedAudienceCost) {
@@ -883,15 +902,8 @@ function showDetails() {
         }
         content += `<div class="detail-item" style="padding-left: 20px;"><span class="detail-label">Translation Final</span><span class="detail-value">$${totalBreakdown.discountedTranslationCost.toFixed(2)}</span></div>`;
     }
-    // Screenshare audio breakdown
-    if (totalBreakdown.screenshareEnabled) {
-        content += `<div class="detail-item"><span class="detail-label">Screenshare Audio</span><span class="detail-value"></span></div>`;
-        if (screenshareAudioDiscount > 0) {
-            content += `<div class="detail-item" style="padding-left: 20px; color: #28a745;"><span class="detail-label">Screenshare Discount</span><span class="detail-value">-$${screenshareAudioDiscount.toFixed(2)}</span></div>`;
-        }
-        content += `<div class="detail-item" style="padding-left: 20px;"><span class="detail-label">Screenshare Final</span><span class="detail-value">$${screenshareAudioDiscounted.toFixed(2)}</span></div>`;
-    }
-    content += `<div class="detail-item" style="font-weight:bold;"><span class="detail-label">Final Cost</span><span class="detail-value">$${totalBreakdown.finalCost.toFixed(2)}</span></div>`;
+    // Always use totalBreakdown.finalCost for summary Final Cost
+    content += `<div class=\"detail-item\" style=\"font-weight:bold;\"><span class=\"detail-label\">Final Cost</span><span class=\"detail-value\">$${(totalBreakdown.finalCost || 0).toFixed(2)}</span></div>`;
 
     content += '</div>';
 
@@ -922,20 +934,32 @@ function closeDetails() {
 }
 
 function showAudienceBreakdown() {
+    // Define these at the top to avoid ReferenceError
+    const originalAudienceCost = audienceDetails.cost;
+    const discountedAudienceCost = audienceDetails.discountedCost || originalAudienceCost;
+    const audienceDiscountApplied = audienceDetails.discountApplied || 0;
+
     let content = '<div class="detail-section">';
     content += '<h4>Audience Tier Breakdown</h4>';
     content += `<div class="detail-item">
         <span class="detail-label">Audience Members (${audienceDetails.count})</span>
-        <span class="detail-value">$${audienceDetails.cost.toFixed(2)}</span>
+        <span class="detail-value">$${originalAudienceCost.toFixed(2)}</span>
     </div>`;
-    content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666;">
-        <span class="detail-label">Aggregate: ${audienceDetails.aggregatePixels.toLocaleString()} px (${audienceDetails.tierName})</span>
-        <span class="detail-value">$${audienceDetails.pricingTier}/1,000 min (${audienceDetails.pricingMode})</span>
+    // Compact, inline discount row (only if discount applied)
+    if (audienceDiscountApplied > 0) {
+        content += `<div class="detail-item" style="font-size: 13px; color: #28a745;">
+            <span class="detail-label">Discount Applied: ${audienceDiscountApplied}%</span>
+            <span class="detail-value">-$${(originalAudienceCost - discountedAudienceCost).toFixed(2)}</span>
+        </div>`;
+    }
+    // Aggregate and tier info in a single row
+    content += `<div class="detail-item" style="font-size: 13px; color: #444;">
+        <span>Aggregate: ${audienceDetails.aggregatePixels.toLocaleString()} px (${audienceDetails.tierName})</span>
+        <span style="margin-left: 18px;">$${audienceDetails.pricingTier}/1,000 min (${audienceDetails.pricingMode})</span>
     </div>`;
-    
     // Add screenshare information if enabled
     if (totalBreakdown.screenshareEnabled) {
-        content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666;">
+        content += `<div class="detail-item" style="padding-left: 0; font-size: 13px; color: #666; background: #f8f9fa; border-radius: 6px; margin-top: 6px;">
             <span class="detail-label">Includes Screenshare: ${totalBreakdown.screenshareResolution}</span>
             <span class="detail-value"></span>
         </div>`;
@@ -1446,3 +1470,6 @@ toggleRecordingDiscounts = function() {
 };
 // Also call on page load in case advanced is already checked
 setTimeout(updateMainRecordingDiscountFieldState, 100); 
+
+// Helper for rounding up to nearest cent
+function ceil2(val) { return Math.ceil(val * 100) / 100; }
