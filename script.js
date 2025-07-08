@@ -107,6 +107,16 @@ function calculatePricing() {
     const transcriptionEnabled = document.getElementById("transcription").checked;
     const translationEnabled = document.getElementById("translation").checked && transcriptionEnabled;
 
+    // New: Get number of transcription and translation languages
+    let transcriptionLanguages = 1;
+    let translationLanguages = 1;
+    if (transcriptionEnabled) {
+        transcriptionLanguages = parseInt(document.getElementById("transcription-languages")?.value) || 1;
+    }
+    if (translationEnabled) {
+        translationLanguages = parseInt(document.getElementById("translation-languages")?.value) || 1;
+    }
+
     const rates = {
         "120p": 0.05,
         "360p": 0.07,
@@ -443,11 +453,16 @@ function calculatePricing() {
     // Calculate transcription and translation costs
     let transcriptionCost = 0;
     let translationCost = 0;
+    let lidCost = 0;
     if (transcriptionEnabled) {
         transcriptionCost = (16.99 * hostEntries.length * duration) / 1000;
+        // LID fee if 2+ languages
+        if (transcriptionLanguages >= 2) {
+            lidCost = (5.00 * hostEntries.length * duration) / 1000;
+        }
     }
     if (translationEnabled) {
-        translationCost = (8.99 * hostEntries.length * duration) / 1000;
+        translationCost = (8.99 * hostEntries.length * duration * translationLanguages) / 1000;
     }
     // Apply discounts
     let transcriptionDiscount = 0;
@@ -461,6 +476,7 @@ function calculatePricing() {
     }
     let discountedTranscriptionCost = transcriptionCost * (1 - transcriptionDiscount / 100);
     let discountedTranslationCost = translationCost * (1 - translationDiscount / 100);
+    // LID cost is not discounted
 
     // Apply tier-based discounts for hosts and audience
     let discountedTotalCost = 0;
@@ -519,7 +535,7 @@ function calculatePricing() {
         return;
     }
 
-    let finalCost = discountedTotalCost + discountedCloudRecordingCost + discountedWebRecordingCost + discountedAinsCost + discountedTranscriptionCost + discountedTranslationCost;
+    let finalCost = discountedTotalCost + discountedCloudRecordingCost + discountedWebRecordingCost + discountedAinsCost + discountedTranscriptionCost + discountedTranslationCost + lidCost;
 
     // 1. Add screenshare audio cost to totalHostCalculation and finalCost
     let screenshareAudioCost = 0;
@@ -568,6 +584,9 @@ function calculatePricing() {
         translationCost: translationCost,
         discountedTranscriptionCost: discountedTranscriptionCost,
         discountedTranslationCost: discountedTranslationCost,
+        lidCost: lidCost,
+        transcriptionLanguages: transcriptionLanguages,
+        translationLanguages: translationLanguages,
         totalCost: totalCost,
         finalCost: finalCost,
         duration: duration,
@@ -732,9 +751,18 @@ function showDetails() {
             <span class="detail-value">$${totalBreakdown.discountedTranscriptionCost.toFixed(2)}</span>
         </div>`;
         content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666; background: none; font-weight: normal;">
-            <span class="detail-label">Applied to: ${hostDetails.length} hosts</span>
-            <span style="margin-left: 12px; background: #f3f4f6; color: #555; font-size: 12px; font-weight: 500; border-radius: 12px; padding: 2px 10px; border-left: 3px solid #667eea;">$16.99/1,000 min per host</span>
+            <span class="detail-label">Applied to: ${hostDetails.length} hosts, ${totalBreakdown.transcriptionLanguages} language${totalBreakdown.transcriptionLanguages > 1 ? 's' : ''}</span>
+            <span style="margin-left: 12px; background: #f3f4f6; color: #555; font-size: 12px; font-weight: 500; border-radius: 12px; padding: 2px 10px; border-left: 3px solid #667eea;">$16.99/1,000 min per hos</span>
         </div>`;
+        if (totalBreakdown.transcriptionLanguages >= 2 && totalBreakdown.lidCost > 0) {
+            content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #b83232; background: none; font-weight: normal;">
+                <span class="detail-label">LID Fee (Language Identification, 2+ languages):</span>
+                <span class="detail-value">$${totalBreakdown.lidCost.toFixed(2)}</span>
+            </div>`;
+            content += `<div class="detail-item" style="padding-left: 40px; font-size: 12px; color: #666; background: none; font-weight: normal;">
+                <span class="detail-label">$5.00/1,000 min per host (not discounted)</span>
+            </div>`;
+        }
         if (totalBreakdown.transcriptionDiscount > 0) {
             content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #28a745;">
                 <span class="detail-label">Discount Applied: ${totalBreakdown.transcriptionDiscount}%</span>
@@ -748,8 +776,8 @@ function showDetails() {
             <span class="detail-value">$${totalBreakdown.discountedTranslationCost.toFixed(2)}</span>
         </div>`;
         content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #666; background: none; font-weight: normal;">
-            <span class="detail-label">Applied to: ${hostDetails.length} hosts</span>
-            <span style="margin-left: 12px; background: #f3f4f6; color: #555; font-size: 12px; font-weight: 500; border-radius: 12px; padding: 2px 10px; border-left: 3px solid #667eea;">$8.99/1,000 min per host</span>
+            <span class="detail-label">Applied to: ${hostDetails.length} hosts, ${totalBreakdown.translationLanguages} translation language${totalBreakdown.translationLanguages > 1 ? 's' : ''}</span>
+            <span style="margin-left: 12px; background: #f3f4f6; color: #555; font-size: 12px; font-weight: 500; border-radius: 12px; padding: 2px 10px; border-left: 3px solid #667eea;">$8.99/1,000 min per host per translation language</span>
         </div>`;
         if (totalBreakdown.translationDiscount > 0) {
             content += `<div class="detail-item" style="padding-left: 20px; font-size: 12px; color: #28a745;">
@@ -837,6 +865,10 @@ function showDetails() {
     // Transcription summary
     if (totalBreakdown.transcriptionCost > 0) {
         content += `<div class="detail-item"><span class="detail-label">Transcription</span><span class="detail-value">$${totalBreakdown.transcriptionCost.toFixed(2)}</span></div>`;
+        content += `<div class="detail-item" style="padding-left: 20px; color: #666;"><span class="detail-label">Languages</span><span class="detail-value">${totalBreakdown.transcriptionLanguages}</span></div>`;
+        if (totalBreakdown.transcriptionLanguages >= 2 && totalBreakdown.lidCost > 0) {
+            content += `<div class="detail-item" style="padding-left: 20px; color: #b83232;"><span class="detail-label">LID Fee</span><span class="detail-value">$${totalBreakdown.lidCost.toFixed(2)}</span></div>`;
+        }
         if (totalBreakdown.transcriptionCost !== totalBreakdown.discountedTranscriptionCost) {
             content += `<div class="detail-item" style="padding-left: 20px; color: #28a745;"><span class="detail-label">Discount Applied</span><span class="detail-value">-$${(totalBreakdown.transcriptionCost-totalBreakdown.discountedTranscriptionCost).toFixed(2)}</span></div>`;
         }
@@ -845,6 +877,7 @@ function showDetails() {
     // Translation summary
     if (totalBreakdown.translationCost > 0) {
         content += `<div class="detail-item"><span class="detail-label">Translation</span><span class="detail-value">$${totalBreakdown.translationCost.toFixed(2)}</span></div>`;
+        content += `<div class="detail-item" style="padding-left: 20px; color: #666;"><span class="detail-label">Translation Languages</span><span class="detail-value">${totalBreakdown.translationLanguages}</span></div>`;
         if (totalBreakdown.translationCost !== totalBreakdown.discountedTranslationCost) {
             content += `<div class="detail-item" style="padding-left: 20px; color: #28a745;"><span class="detail-label">Discount Applied</span><span class="detail-value">-$${(totalBreakdown.translationCost-totalBreakdown.discountedTranslationCost).toFixed(2)}</span></div>`;
         }
@@ -1090,7 +1123,7 @@ function openAdvancedDiscounts() {
     const rtcDiscount = parseFloat(document.getElementById("rtc-discount").value) || 0;
     document.getElementById("master-discount").value = rtcDiscount;
     
-    updateTierDiscounts(); // Initialize tier discounts with master discount
+    updateTierDiscounts(); // Restore original behavior
     updateMainDiscountFieldsState(); // Grey out main discount fields
     
     // Add event listeners for closing the popup
@@ -1107,6 +1140,38 @@ function openAdvancedDiscounts() {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && popup.style.display === 'flex') {
             closeAdvancedDiscounts();
+        }
+    });
+}
+
+// Populate tier discount fields from saved tierDiscounts
+function populateTierDiscountFieldsFromSaved() {
+    const discountInputs = [
+        { id: 'audio-discount', key: 'audio' },
+        { id: 'hd-discount', key: 'hd' },
+        { id: 'fullhd-discount', key: 'fullhd' },
+        { id: '2k-discount', key: '2k' },
+        { id: '2kplus-discount', key: '2kplus' },
+        { id: 'ains-discount', key: 'ains' },
+        { id: 'bs-audio-discount', key: 'bsAudio' },
+        { id: 'bs-hd-discount', key: 'bsHd' },
+        { id: 'bs-fullhd-discount', key: 'bsFullhd' },
+        { id: 'bs-2k-discount', key: 'bs2k' },
+        { id: 'bs-2kplus-discount', key: 'bs2kplus' },
+        { id: 'transcription-discount', key: 'transcription' },
+        { id: 'translation-discount', key: 'translation' },
+        { id: 'cloud-audio-discount', key: 'cloudAudio' },
+        { id: 'cloud-hd-discount', key: 'cloudHd' },
+        { id: 'cloud-fullhd-discount', key: 'cloudFullhd' },
+        { id: 'cloud-2k-discount', key: 'cloud2k' },
+        { id: 'cloud-2kplus-discount', key: 'cloud2kplus' },
+        { id: 'web-hd-discount', key: 'webHd' },
+        { id: 'web-fullhd-discount', key: 'webFullhd' }
+    ];
+    discountInputs.forEach(({id, key}) => {
+        const input = document.getElementById(id);
+        if (input && typeof tierDiscounts[key] !== 'undefined') {
+            input.value = tierDiscounts[key];
         }
     });
 }
@@ -1154,16 +1219,38 @@ function closeAdvancedDiscounts() {
 
 function updateTierDiscounts() {
     const masterDiscount = parseFloat(document.getElementById("master-discount").value) || 0;
-    // Always set all RTC tier fields to the master value
+    // Always set all RTC tier fields to the master value, unless a saved value exists
     const discountInputs = [
-        'audio-discount', 'hd-discount', 'fullhd-discount', '2k-discount', '2kplus-discount',
-        'ains-discount', 'bs-audio-discount', 'bs-hd-discount', 'bs-fullhd-discount', 
-        'bs-2k-discount', 'bs-2kplus-discount', 'transcription-discount', 'translation-discount'
+        { id: 'audio-discount', key: 'audio' },
+        { id: 'hd-discount', key: 'hd' },
+        { id: 'fullhd-discount', key: 'fullhd' },
+        { id: '2k-discount', key: '2k' },
+        { id: '2kplus-discount', key: '2kplus' },
+        { id: 'ains-discount', key: 'ains' },
+        { id: 'bs-audio-discount', key: 'bsAudio' },
+        { id: 'bs-hd-discount', key: 'bsHd' },
+        { id: 'bs-fullhd-discount', key: 'bsFullhd' },
+        { id: 'bs-2k-discount', key: 'bs2k' },
+        { id: 'bs-2kplus-discount', key: 'bs2kplus' },
+        { id: 'transcription-discount', key: 'transcription' },
+        { id: 'translation-discount', key: 'translation' },
+        { id: 'cloud-audio-discount', key: 'cloudAudio' },
+        { id: 'cloud-hd-discount', key: 'cloudHd' },
+        { id: 'cloud-fullhd-discount', key: 'cloudFullhd' },
+        { id: 'cloud-2k-discount', key: 'cloud2k' },
+        { id: 'cloud-2kplus-discount', key: 'cloud2kplus' },
+        { id: 'web-hd-discount', key: 'webHd' },
+        { id: 'web-fullhd-discount', key: 'webFullhd' }
     ];
-    discountInputs.forEach(inputId => {
-        const input = document.getElementById(inputId);
+    discountInputs.forEach(({id, key}) => {
+        const input = document.getElementById(id);
         if (input) {
-            input.value = masterDiscount;
+            // If a saved value exists and is nonzero, use it; otherwise use master
+            if (typeof tierDiscounts[key] !== 'undefined' && tierDiscounts[key] !== 0) {
+                input.value = tierDiscounts[key];
+            } else {
+                input.value = masterDiscount;
+            }
         }
     });
 }
@@ -1241,7 +1328,7 @@ function getDiscountForTier(tierName, isBroadcastStreaming = false) {
         'hdvideo': isBroadcastStreaming ? 'bsHd' : 'hd',
         'fullhdvideo': isBroadcastStreaming ? 'bsFullhd' : 'fullhd',
         '2kvideo': isBroadcastStreaming ? 'bs2k' : '2k',
-        '2k+video': isBroadcastStreaming ? 'bs2kplus' : '2kplus',
+        '2kplusvideo': isBroadcastStreaming ? 'bs2kplus' : '2kplus',
         '2kplusvideo': isBroadcastStreaming ? 'bs2kplus' : '2kplus',
     };
     const discountKey = tierMap[norm(tierName)];

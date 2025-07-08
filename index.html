@@ -87,18 +87,26 @@
                 </select>
             </div>
 
-            <!-- Real-Time Speech-To-Text Checkbox -->
-            <div class="form-group checkbox-container">
-                <input type="checkbox" id="transcription" onchange="toggleTranslationOption()" />
-                <label for="transcription">Enable Real-Time Speech-To-Text</label>
+            <!-- Real-Time Speech-To-Text Checkbox and # Languages Inline -->
+            <div class="form-group checkbox-container" style="align-items: center; display: flex;">
+                <input type="checkbox" id="transcription" onchange="toggleTranslationOption(); toggleTranscriptionLanguages();" />
+                <label for="transcription" style="min-width: 220px;">Enable Real-Time Speech-To-Text</label>
+                <div id="transcription-languages-container" style="display: none; margin-left: 10px; display: flex; align-items: center; gap: 5px; font-size: 14px;">
+                    <label for="transcription-languages" style="margin: 0; font-size: 14px; min-width: 90px;"># Languages:</label>
+                    <input type="number" id="transcription-languages" min="1" value="1" class="text-input" style="width: 45px; height: 26px; font-size: 14px; padding: 2px 6px; min-width: 45px;" />
+                </div>
             </div>
-            <!-- Translation Checkbox (hidden unless transcription is checked) -->
-            <div class="form-group checkbox-container" id="translation-container" style="display: none; margin-left: 24px;">
-                <input type="checkbox" id="translation" />
-                <label for="translation">Enable Translation (Additional Cost)</label>
+            <!-- Translation Checkbox and # Translation Languages Inline -->
+            <div class="form-group checkbox-container" id="translation-container" style="display: none; align-items: center; display: flex; margin-left: 24px;">
+                <input type="checkbox" id="translation" onchange="toggleTranslationLanguages();" />
+                <label for="translation" style="min-width: 220px;">Enable Translation (Additional Cost)</label>
+                <div id="translation-languages-container" style="display: none; margin-left: 10px; display: flex; align-items: center; gap: 5px; font-size: 14px;">
+                    <label for="translation-languages" style="margin: 0; font-size: 14px; min-width: 140px;"># Translation Languages:</label>
+                    <input type="number" id="translation-languages" min="1" value="1" class="text-input" style="width: 45px; height: 26px; font-size: 14px; padding: 2px 6px; min-width: 45px;" />
+                </div>
             </div>
             <div style="margin-bottom: 10px; margin-top: -10px; font-size: 13px; color: #b83232; background: #fff5f5; border-left: 4px solid #b83232; padding: 8px 12px; border-radius: 6px;">
-                <strong>Note:</strong> STT and Translation costs are calculated for all host minutes. Only unpublishing the audio stream (which includes calling setMuted/SetEnabled) will stop minutes from counting towards cost. This calculator does not account for the cost of muting a host.
+                <strong>Note:</strong> STT and Translation costs are calculated for all host minutes. Only unpublishing the audio stream (which includes calling setMuted/setEnabled) will stop minutes from counting towards cost. This calculator does not account for the cost of muting a host.
             </div>
 
             <!-- Discount Fields -->
@@ -375,11 +383,36 @@ function toggleTranslationOption() {
         translationContainer.style.display = transcription.checked ? '' : 'none';
     }
 }
+function toggleTranscriptionLanguages() {
+    var transcription = document.getElementById('transcription');
+    var transcriptionLanguagesContainer = document.getElementById('transcription-languages-container');
+    if (transcriptionLanguagesContainer && transcription) {
+        transcriptionLanguagesContainer.style.display = transcription.checked ? '' : 'none';
+    }
+}
+function toggleTranslationLanguages() {
+    var translation = document.getElementById('translation');
+    var translationLanguagesContainer = document.getElementById('translation-languages-container');
+    if (translationLanguagesContainer && translation) {
+        translationLanguagesContainer.style.display = translation.checked ? '' : 'none';
+    }
+}
 // Call this when opening the modal
 if (window.openAdvancedDiscounts) {
     var origOpen = window.openAdvancedDiscounts;
     window.openAdvancedDiscounts = function() { origOpen.apply(this, arguments); updateBSDiscountSection(); };
 }
+// Ensure language containers are hidden on page load
+window.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('transcription-languages-container').style.display = 'none';
+    document.getElementById('translation-languages-container').style.display = 'none';
+    // Hide translation container unless transcription is checked
+    var transcription = document.getElementById('transcription');
+    var translationContainer = document.getElementById('translation-container');
+    if (translationContainer && transcription && !transcription.checked) {
+        translationContainer.style.display = 'none';
+    }
+});
 </script>
     </body>
 </html>
