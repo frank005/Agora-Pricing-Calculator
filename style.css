@@ -118,7 +118,8 @@ select:focus {
 .checkbox-container {
     display: flex;
     align-items: center;
-    margin-bottom: 20px;
+    /* margin-bottom: 20px; */
+    margin-bottom: 5px;
     text-align: left;
     /* height: 25px; */
     height: 34px;
