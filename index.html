@@ -18,18 +18,29 @@
                 </button>
                 <div class="hosts-container" id="hosts-container"></div>
             </div>
-            <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                <label for="audience" style="flex: 1;">Number of Audience Members:</label>
+            <div
+                class="form-group"
+                style="display: flex; align-items: center; gap: 10px"
+            >
+                <label for="audience" style="flex: 1"
+                    >Number of Audience Members:</label
+                >
                 <input
                     type="number"
                     id="audience"
                     placeholder="Enter number of audience members"
                     min="0"
                     class="text-input"
-                    style="flex: 1;"
+                    style="flex: 1"
                 />
-                <input type="checkbox" id="bs-audience" style="margin-left: 10px;" />
-                <label for="bs-audience" style="margin: 0; font-size: 13px;">Broadcast Streaming</label>
+                <input
+                    type="checkbox"
+                    id="bs-audience"
+                    style="margin-left: 10px"
+                />
+                <label for="bs-audience" style="margin: 0; font-size: 13px"
+                    >Broadcast Streaming</label
+                >
             </div>
             <div class="form-group">
                 <label for="duration">Duration (in minutes):</label>
@@ -88,32 +99,146 @@
             </div>
 
             <!-- Real-Time Speech-To-Text Checkbox and # Languages Inline -->
-            <div class="form-group checkbox-container" style="align-items: center; display: flex;">
-                <input type="checkbox" id="transcription" onchange="toggleTranslationOption(); toggleTranscriptionLanguages();" />
-                <label for="transcription" style="min-width: 220px;">Enable Real-Time Speech-To-Text</label>
-                <div id="transcription-languages-container" style="display: none; margin-left: 10px; display: flex; align-items: center; gap: 5px; font-size: 14px;">
-                    <label for="transcription-languages" style="margin: 0; font-size: 14px; min-width: 90px;"># Languages:</label>
-                    <input type="number" id="transcription-languages" min="1" value="1" class="text-input" style="width: 45px; height: 26px; font-size: 14px; padding: 2px 6px; min-width: 45px;" />
+            <div
+                class="form-group checkbox-container"
+                style="align-items: center; display: flex"
+            >
+                <input
+                    type="checkbox"
+                    id="transcription"
+                    onchange="toggleTranslationOption(); toggleTranscriptionLanguages();"
+                />
+                <label
+                    for="transcription"
+                    style="
+                        min-width: 220px;
+                        height: 34px;
+                        vertical-align: middle;
+                        line-height: 34px;
+                    "
+                    >Enable Real-Time Speech-To-Text</label
+                >
+                <div
+                    id="transcription-languages-container"
+                    style="
+                        display: none;
+                        margin-left: 10px;
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                        font-size: 14px;
+                    "
+                >
+                    <label
+                        for="transcription-languages"
+                        style="
+                            margin: 0;
+                            font-size: 14px;
+                            min-width: 90px;
+                            line-height: 34px;
+                            vertical-align: middle;
+                        "
+                        ># Languages:</label
+                    >
+                    <input
+                        type="number"
+                        id="transcription-languages"
+                        min="1"
+                        value="1"
+                        class="text-input"
+                        style="
+                            width: 45px;
+                            height: 26px;
+                            font-size: 14px;
+                            padding: 2px 6px;
+                            min-width: 45px;
+                        "
+                    />
                 </div>
             </div>
             <!-- Translation Checkbox and # Translation Languages Inline -->
-            <div class="form-group checkbox-container" id="translation-container" style="display: none; align-items: center; display: flex; margin-left: 24px;">
-                <input type="checkbox" id="translation" onchange="toggleTranslationLanguages();" />
-                <label for="translation" style="min-width: 220px;">Enable Translation (Additional Cost)</label>
-                <div id="translation-languages-container" style="display: none; margin-left: 10px; display: flex; align-items: center; gap: 5px; font-size: 14px;">
-                    <label for="translation-languages" style="margin: 0; font-size: 14px; min-width: 140px;"># Translation Languages:</label>
-                    <input type="number" id="translation-languages" min="1" value="1" class="text-input" style="width: 45px; height: 26px; font-size: 14px; padding: 2px 6px; min-width: 45px;" />
+            <div
+                class="form-group checkbox-container"
+                id="translation-container"
+                style="
+                    display: none;
+                    align-items: center;
+                    display: flex;
+                    margin-left: 24px;
+                "
+            >
+                <input
+                    type="checkbox"
+                    id="translation"
+                    onchange="toggleTranslationLanguages();"
+                />
+                <label
+                    for="translation"
+                    style="
+                        min-width: 220px;
+                        height: 34px;
+                        vertical-align: middle;
+                        line-height: 34px;
+                    "
+                    >Enable Translation (Additional Cost)</label
+                >
+                <div
+                    id="translation-languages-container"
+                    style="
+                        display: none;
+                        margin-left: 10px;
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                        font-size: 14px;
+                        line-height: 34px;
+                    "
+                >
+                    <label
+                        for="translation-languages"
+                        style="margin: 0; font-size: 14px; min-width: 140px"
+                        ># Translation Languages:</label
+                    >
+                    <input
+                        type="number"
+                        id="translation-languages"
+                        min="1"
+                        value="1"
+                        class="text-input"
+                        style="
+                            width: 45px;
+                            height: 26px;
+                            font-size: 14px;
+                            padding: 2px 6px;
+                            min-width: 45px;
+                        "
+                    />
                 </div>
             </div>
-            <div style="margin-bottom: 10px; margin-top: -10px; font-size: 13px; color: #b83232; background: #fff5f5; border-left: 4px solid #b83232; padding: 8px 12px; border-radius: 6px;">
-                <strong>Note:</strong> STT and Translation costs are calculated for all host minutes. Only unpublishing the audio stream (which includes calling setMuted/setEnabled) will stop minutes from counting towards cost. This calculator does not account for the cost of muting a host.
+            <div
+                style="
+                    margin-bottom: 10px;
+                    margin-top: -10px;
+                    font-size: 13px;
+                    color: #b83232;
+                    background: #fff5f5;
+                    border-left: 4px solid #b83232;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                "
+            >
+                <strong>Note:</strong> STT and Translation costs are calculated
+                for all host minutes. Only unpublishing the audio stream (which
+                includes calling setMuted/setEnabled) will stop minutes from
+                counting towards cost. This calculator does not account for the
+                cost of muting a host.
             </div>
 
             <!-- Discount Fields -->
-            <div class="form-group" style="display: flex; gap: 15px;">
-                <div style="flex: 1;">
+            <div class="form-group" style="display: flex; gap: 15px">
+                <div style="flex: 1">
                     <label for="rtc-discount">RTC/AINS Discount (%):</label>
-                <input
+                    <input
                         type="number"
                         id="rtc-discount"
                         placeholder="RTC/AINS %"
@@ -122,68 +247,129 @@
                         class="text-input"
                         onchange="updateTierDiscounts()"
                     />
-            </div>
-                <div style="flex: 1;">
-                    <label for="recording-discount">Recording Discount (%):</label>
-                <input
-                    type="number"
+                </div>
+                <div style="flex: 1">
+                    <label for="recording-discount"
+                        >Recording Discount (%):</label
+                    >
+                    <input
+                        type="number"
                         id="recording-discount"
                         placeholder="Recording %"
-                    min="0"
-                    max="100"
-                    class="text-input"
-                />
+                        min="0"
+                        max="100"
+                        class="text-input"
+                    />
                 </div>
             </div>
 
             <!-- Advanced Discount Controls -->
             <div class="form-group checkbox-container">
-                <input type="checkbox" id="advanced-discounts" onchange="toggleAdvancedDiscounts()" />
-                <label for="advanced-discounts">Enable Advanced Discount Controls</label>
-                <button type="button" class="advanced-discounts-btn" onclick="openAdvancedDiscounts()" style="margin-left: 10px; background: #667eea; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Configure</button>
+                <input
+                    type="checkbox"
+                    id="advanced-discounts"
+                    onchange="toggleAdvancedDiscounts()"
+                />
+                <label for="advanced-discounts"
+                    >Enable Advanced Discount Controls</label
+                >
+                <button
+                    type="button"
+                    class="advanced-discounts-btn"
+                    onclick="openAdvancedDiscounts()"
+                    style="
+                        margin-left: 10px;
+                        background: #667eea;
+                        color: white;
+                        border: none;
+                        padding: 5px 10px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        cursor: pointer;
+                    "
+                >
+                    Configure
+                </button>
             </div>
 
             <button class="button" onclick="calculatePricing()">
                 Calculate
             </button>
-            <div style="display: flex; gap: 10px;">
-                <button class="button" onclick="showDetails()" style="background: #48bb78; font-size: 16px; flex: 1;">
+            <div style="display: flex; gap: 10px">
+                <button
+                    class="button"
+                    onclick="showDetails()"
+                    style="background: #48bb78; font-size: 16px; flex: 1"
+                >
                     Show Cost Details
                 </button>
-                <button class="button" onclick="showAudienceBreakdown()" style="background: #48bb78; font-size: 16px; flex: 1;">
+                <button
+                    class="button"
+                    onclick="showAudienceBreakdown()"
+                    style="background: #48bb78; font-size: 16px; flex: 1"
+                >
                     Show Tier Breakdown
                 </button>
             </div>
             <div class="result" id="result"></div>
-            <div style="margin-bottom: 10px; margin-top: -10px; font-size: 13px; color: #b83232; background: #fff5f5; border-left: 4px solid #b83232; padding: 8px 12px; border-radius: 6px;">
-                
-                    <strong>Disclaimer:</strong> This is not an official calculator and may provide
-                    incorrect estimates. 
+            <div
+                style="
+                    margin-bottom: 10px;
+                    margin-top: -10px;
+                    font-size: 13px;
+                    color: #b83232;
+                    background: #fff5f5;
+                    border-left: 4px solid #b83232;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                "
+            >
+                <strong>Disclaimer:</strong> This is not an official calculator
+                and may provide incorrect estimates.
             </div>
         </div>
 
         <!-- Details Popup -->
-        <div id="detailsPopup" class="popup-overlay" style="display: none;">
+        <div id="detailsPopup" class="popup-overlay" style="display: none">
             <div class="popup-content">
                 <div class="popup-header">
                     <h3>Detailed Cost Breakdown</h3>
-                    <button class="close-btn" onclick="closeDetails()">&times;</button>
+                    <button class="close-btn" onclick="closeDetails()">
+                        &times;
+                    </button>
                 </div>
                 <div id="detailsContent" class="popup-body">
                     <!-- Content will be populated by JavaScript -->
                 </div>
-                <div style="text-align: right; padding: 20px;">
-                    <button id="export-pdf-btn" class="button" style="background: #4a5568; color: #fff; width: auto; padding: 10px 20px; font-size: 15px;">Export to PDF</button>
+                <div style="text-align: right; padding: 20px">
+                    <button
+                        id="export-pdf-btn"
+                        class="button"
+                        style="
+                            background: #4a5568;
+                            color: #fff;
+                            width: auto;
+                            padding: 10px 20px;
+                            font-size: 15px;
+                        "
+                    >
+                        Export to PDF
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Audience Breakdown Popup -->
-        <div id="audiencePopup" class="popup-overlay" style="display: none;">
+        <div id="audiencePopup" class="popup-overlay" style="display: none">
             <div class="popup-content">
                 <div class="popup-header">
                     <h3>Audience Tier Breakdown</h3>
-                    <button class="close-btn" onclick="closeAudienceBreakdown()">&times;</button>
+                    <button
+                        class="close-btn"
+                        onclick="closeAudienceBreakdown()"
+                    >
+                        &times;
+                    </button>
                 </div>
                 <div id="audienceContent" class="popup-body">
                     <!-- Content will be populated by JavaScript -->
@@ -192,176 +378,444 @@
         </div>
 
         <!-- Advanced Discounts Popup -->
-        <div id="advancedDiscountsPopup" class="popup-overlay" style="display: none;">
+        <div
+            id="advancedDiscountsPopup"
+            class="popup-overlay"
+            style="display: none"
+        >
             <div class="popup-content">
                 <div class="popup-header">
                     <h3>Advanced Discount Controls</h3>
-                    <button class="close-btn" onclick="closeAdvancedDiscounts()">&times;</button>
+                    <button
+                        class="close-btn"
+                        onclick="closeAdvancedDiscounts()"
+                    >
+                        &times;
+                    </button>
                 </div>
                 <div class="popup-body">
                     <div class="discount-section">
                         <h4>Master Discount</h4>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-                            Set a master discount that will be applied to all tiers by default. You can then override individual tiers below.
+                        <p
+                            style="
+                                color: #666;
+                                font-size: 14px;
+                                margin-bottom: 20px;
+                            "
+                        >
+                            Set a master discount that will be applied to all
+                            tiers by default. You can then override individual
+                            tiers below.
                         </p>
-                        
+
                         <div class="tier-discount-item">
-                            <label for="master-discount">Master Discount (%):</label>
-                            <input type="number" id="master-discount" placeholder="0" min="0" max="100" class="text-input" onchange="updateTierDiscounts()" />
-                            <span class="tier-info">Applied to all tiers by default</span>
+                            <label for="master-discount"
+                                >Master Discount (%):</label
+                            >
+                            <input
+                                type="number"
+                                id="master-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                                onchange="updateTierDiscounts()"
+                            />
+                            <span class="tier-info"
+                                >Applied to all tiers by default</span
+                            >
                         </div>
                     </div>
-                    
+
                     <div class="discount-section">
                         <h4>Resolution Tier Discounts</h4>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-                            Set individual discounts for each resolution tier. The master discount will be applied by default, but you can override each tier individually.
+                        <p
+                            style="
+                                color: #666;
+                                font-size: 14px;
+                                margin-bottom: 20px;
+                            "
+                        >
+                            Set individual discounts for each resolution tier.
+                            The master discount will be applied by default, but
+                            you can override each tier individually.
                         </p>
-                        
+
                         <div class="tier-discount-item">
                             <label for="audio-discount">Audio Only:</label>
-                            <input type="number" id="audio-discount" placeholder="0" min="0" max="100" class="text-input" />
+                            <input
+                                type="number"
+                                id="audio-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
                             <span class="tier-info">Base: $0.99/1,000 min</span>
                         </div>
-                        
+
                         <div class="tier-discount-item">
                             <label for="hd-discount">HD Video:</label>
-                            <input type="number" id="hd-discount" placeholder="0" min="0" max="100" class="text-input" />
+                            <input
+                                type="number"
+                                id="hd-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
                             <span class="tier-info">Base: $3.99/1,000 min</span>
                         </div>
-                        
+
                         <div class="tier-discount-item">
                             <label for="fullhd-discount">Full HD Video:</label>
-                            <input type="number" id="fullhd-discount" placeholder="0" min="0" max="100" class="text-input" />
+                            <input
+                                type="number"
+                                id="fullhd-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
                             <span class="tier-info">Base: $8.99/1,000 min</span>
                         </div>
-                        
+
                         <div class="tier-discount-item">
                             <label for="2k-discount">2K Video:</label>
-                            <input type="number" id="2k-discount" placeholder="0" min="0" max="100" class="text-input" />
-                            <span class="tier-info">Base: $15.99/1,000 min</span>
+                            <input
+                                type="number"
+                                id="2k-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
+                            <span class="tier-info"
+                                >Base: $15.99/1,000 min</span
+                            >
                         </div>
-                        
+
                         <div class="tier-discount-item">
                             <label for="2kplus-discount">2K+ Video:</label>
-                            <input type="number" id="2kplus-discount" placeholder="0" min="0" max="100" class="text-input" />
-                            <span class="tier-info">Base: $35.99/1,000 min</span>
+                            <input
+                                type="number"
+                                id="2kplus-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
+                            <span class="tier-info"
+                                >Base: $35.99/1,000 min</span
+                            >
                         </div>
                     </div>
-                    
+
                     <div class="discount-section">
                         <h4>AINS Discount</h4>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-                            Set a separate discount for AINS (Audio Intelligence Noise Suppression).
+                        <p
+                            style="
+                                color: #666;
+                                font-size: 14px;
+                                margin-bottom: 20px;
+                            "
+                        >
+                            Set a separate discount for AINS (Audio Intelligence
+                            Noise Suppression).
                         </p>
-                        
+
                         <div class="tier-discount-item">
                             <label for="ains-discount">AINS:</label>
-                            <input type="number" id="ains-discount" placeholder="0" min="0" max="100" class="text-input" />
-                            <span class="tier-info">Base: $0.59/1,000 min per host</span>
+                            <input
+                                type="number"
+                                id="ains-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
+                            <span class="tier-info"
+                                >Base: $0.59/1,000 min per host</span
+                            >
                         </div>
                     </div>
                     <!-- Transcription Discount -->
                     <div class="discount-section">
                         <h4>Transcription & Translation Discounts</h4>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-                            Set discounts for Real-Time Speech-To-Text and Translation services.
+                        <p
+                            style="
+                                color: #666;
+                                font-size: 14px;
+                                margin-bottom: 20px;
+                            "
+                        >
+                            Set discounts for Real-Time Speech-To-Text and
+                            Translation services.
                         </p>
                         <div class="tier-discount-item">
-                            <label for="transcription-discount">Transcription:</label>
-                            <input type="number" id="transcription-discount" placeholder="0" min="0" max="100" class="text-input" />
-                            <span class="tier-info">Base: $16.99/1,000 min per host</span>
+                            <label for="transcription-discount"
+                                >Transcription:</label
+                            >
+                            <input
+                                type="number"
+                                id="transcription-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
+                            <span class="tier-info"
+                                >Base: $16.99/1,000 min per host</span
+                            >
                         </div>
                         <div class="tier-discount-item">
-                            <label for="translation-discount">Translation:</label>
-                            <input type="number" id="translation-discount" placeholder="0" min="0" max="100" class="text-input" />
-                            <span class="tier-info">Base: $8.99/1,000 min per host</span>
+                            <label for="translation-discount"
+                                >Translation:</label
+                            >
+                            <input
+                                type="number"
+                                id="translation-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
+                            <span class="tier-info"
+                                >Base: $8.99/1,000 min per host</span
+                            >
                         </div>
                     </div>
                     <div id="bs-discount-section" class="discount-section">
                         <h4>Broadcast Streaming Audience Discounts</h4>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-                            Set individual discounts for broadcast streaming audience tiers.
+                        <p
+                            style="
+                                color: #666;
+                                font-size: 14px;
+                                margin-bottom: 20px;
+                            "
+                        >
+                            Set individual discounts for broadcast streaming
+                            audience tiers.
                         </p>
                         <div class="tier-discount-item">
                             <label for="bs-audio-discount">Audio Only:</label>
-                            <input type="number" id="bs-audio-discount" placeholder="0" min="0" max="100" class="text-input" />
+                            <input
+                                type="number"
+                                id="bs-audio-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
                             <span class="tier-info">Base: $0.59/1,000 min</span>
                         </div>
                         <div class="tier-discount-item">
                             <label for="bs-hd-discount">HD Video:</label>
-                            <input type="number" id="bs-hd-discount" placeholder="0" min="0" max="100" class="text-input" />
+                            <input
+                                type="number"
+                                id="bs-hd-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
                             <span class="tier-info">Base: $1.99/1,000 min</span>
                         </div>
                         <div class="tier-discount-item">
-                            <label for="bs-fullhd-discount">Full HD Video:</label>
-                            <input type="number" id="bs-fullhd-discount" placeholder="0" min="0" max="100" class="text-input" />
+                            <label for="bs-fullhd-discount"
+                                >Full HD Video:</label
+                            >
+                            <input
+                                type="number"
+                                id="bs-fullhd-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
                             <span class="tier-info">Base: $4.59/1,000 min</span>
                         </div>
                         <div class="tier-discount-item">
                             <label for="bs-2k-discount">2K Video:</label>
-                            <input type="number" id="bs-2k-discount" placeholder="0" min="0" max="100" class="text-input" />
+                            <input
+                                type="number"
+                                id="bs-2k-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
                             <span class="tier-info">Base: $7.99/1,000 min</span>
                         </div>
                         <div class="tier-discount-item">
                             <label for="bs-2kplus-discount">2K+ Video:</label>
-                            <input type="number" id="bs-2kplus-discount" placeholder="0" min="0" max="100" class="text-input" />
-                            <span class="tier-info">Base: $17.99/1,000 min</span>
+                            <input
+                                type="number"
+                                id="bs-2kplus-discount"
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                class="text-input"
+                            />
+                            <span class="tier-info"
+                                >Base: $17.99/1,000 min</span
+                            >
                         </div>
                     </div>
-                    
+
                     <div class="discount-section">
                         <h4>Recording Discounts</h4>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+                        <p
+                            style="
+                                color: #666;
+                                font-size: 14px;
+                                margin-bottom: 20px;
+                            "
+                        >
                             Set individual discounts for recording services.
                         </p>
                         <div class="tier-discount-item">
-                            <input type="checkbox" id="recording-advanced-discounts" onchange="toggleRecordingDiscounts()" />
-                            <label for="recording-advanced-discounts">Enable Advanced Recording Discounts</label>
+                            <input
+                                type="checkbox"
+                                id="recording-advanced-discounts"
+                                onchange="toggleRecordingDiscounts()"
+                            />
+                            <label for="recording-advanced-discounts"
+                                >Enable Advanced Recording Discounts</label
+                            >
                         </div>
-                        <div id="recording-discount-fields" style="display: none;">
-                            <div style="margin-bottom: 10px; font-weight: bold;">Cloud Recording Tiers</div>
+                        <div
+                            id="recording-discount-fields"
+                            style="display: none"
+                        >
+                            <div style="margin-bottom: 10px; font-weight: bold">
+                                Cloud Recording Tiers
+                            </div>
                             <div class="tier-discount-item">
-                                <label for="cloud-audio-discount">Audio Only:</label>
-                                <input type="number" id="cloud-audio-discount" placeholder="0" min="0" max="100" class="text-input" />
-                                <span class="tier-info">Base: $1.49/1,000 min</span>
+                                <label for="cloud-audio-discount"
+                                    >Audio Only:</label
+                                >
+                                <input
+                                    type="number"
+                                    id="cloud-audio-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info"
+                                    >Base: $1.49/1,000 min</span
+                                >
                             </div>
                             <div class="tier-discount-item">
                                 <label for="cloud-hd-discount">HD Video:</label>
-                                <input type="number" id="cloud-hd-discount" placeholder="0" min="0" max="100" class="text-input" />
-                                <span class="tier-info">Base: $5.99/1,000 min</span>
+                                <input
+                                    type="number"
+                                    id="cloud-hd-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info"
+                                    >Base: $5.99/1,000 min</span
+                                >
                             </div>
                             <div class="tier-discount-item">
-                                <label for="cloud-fullhd-discount">Full HD Video:</label>
-                                <input type="number" id="cloud-fullhd-discount" placeholder="0" min="0" max="100" class="text-input" />
-                                <span class="tier-info">Base: $13.49/1,000 min</span>
+                                <label for="cloud-fullhd-discount"
+                                    >Full HD Video:</label
+                                >
+                                <input
+                                    type="number"
+                                    id="cloud-fullhd-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info"
+                                    >Base: $13.49/1,000 min</span
+                                >
                             </div>
                             <div class="tier-discount-item">
                                 <label for="cloud-2k-discount">2K Video:</label>
-                                <input type="number" id="cloud-2k-discount" placeholder="0" min="0" max="100" class="text-input" />
-                                <span class="tier-info">Base: $23.99/1,000 min</span>
+                                <input
+                                    type="number"
+                                    id="cloud-2k-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info"
+                                    >Base: $23.99/1,000 min</span
+                                >
                             </div>
                             <div class="tier-discount-item">
-                                <label for="cloud-2kplus-discount">2K+ Video:</label>
-                                <input type="number" id="cloud-2kplus-discount" placeholder="0" min="0" max="100" class="text-input" />
-                                <span class="tier-info">Base: $53.99/1,000 min</span>
+                                <label for="cloud-2kplus-discount"
+                                    >2K+ Video:</label
+                                >
+                                <input
+                                    type="number"
+                                    id="cloud-2kplus-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info"
+                                    >Base: $53.99/1,000 min</span
+                                >
                             </div>
-                            <div style="margin-bottom: 10px; font-weight: bold; margin-top: 20px;">Web Page Recording Tiers</div>
+                            <div
+                                style="
+                                    margin-bottom: 10px;
+                                    font-weight: bold;
+                                    margin-top: 20px;
+                                "
+                            >
+                                Web Page Recording Tiers
+                            </div>
                             <div class="tier-discount-item">
                                 <label for="web-hd-discount">HD (720p):</label>
-                                <input type="number" id="web-hd-discount" placeholder="0" min="0" max="100" class="text-input" />
-                                <span class="tier-info">Base: $14/1,000 min</span>
+                                <input
+                                    type="number"
+                                    id="web-hd-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info"
+                                    >Base: $14/1,000 min</span
+                                >
                             </div>
                             <div class="tier-discount-item">
-                                <label for="web-fullhd-discount">Full HD (1080p):</label>
-                                <input type="number" id="web-fullhd-discount" placeholder="0" min="0" max="100" class="text-input" />
-                                <span class="tier-info">Base: $28/1,000 min</span>
+                                <label for="web-fullhd-discount"
+                                    >Full HD (1080p):</label
+                                >
+                                <input
+                                    type="number"
+                                    id="web-fullhd-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info"
+                                    >Base: $28/1,000 min</span
+                                >
                             </div>
                         </div>
                     </div>
-                    
-                    <div style="text-align: center; margin-top: 30px;">
-                        <button class="button" onclick="saveAdvancedDiscounts()">Save Discounts</button>
+
+                    <div style="text-align: center; margin-top: 30px">
+                        <button
+                            class="button"
+                            onclick="saveAdvancedDiscounts()"
+                        >
+                            Save Discounts
+                        </button>
                     </div>
                 </div>
             </div>
@@ -369,50 +823,73 @@
 
         <script src="script.js"></script>
         <script>
-function updateBSDiscountSection() {
-    var bsSection = document.getElementById('bs-discount-section');
-    var bsAudience = document.getElementById('bs-audience');
-    if (bsSection && bsAudience) {
-        bsSection.style.display = bsAudience.checked ? '' : 'none';
-    }
-}
-function toggleTranslationOption() {
-    var transcription = document.getElementById('transcription');
-    var translationContainer = document.getElementById('translation-container');
-    if (transcription && translationContainer) {
-        translationContainer.style.display = transcription.checked ? '' : 'none';
-    }
-}
-function toggleTranscriptionLanguages() {
-    var transcription = document.getElementById('transcription');
-    var transcriptionLanguagesContainer = document.getElementById('transcription-languages-container');
-    if (transcriptionLanguagesContainer && transcription) {
-        transcriptionLanguagesContainer.style.display = transcription.checked ? '' : 'none';
-    }
-}
-function toggleTranslationLanguages() {
-    var translation = document.getElementById('translation');
-    var translationLanguagesContainer = document.getElementById('translation-languages-container');
-    if (translationLanguagesContainer && translation) {
-        translationLanguagesContainer.style.display = translation.checked ? '' : 'none';
-    }
-}
-// Call this when opening the modal
-if (window.openAdvancedDiscounts) {
-    var origOpen = window.openAdvancedDiscounts;
-    window.openAdvancedDiscounts = function() { origOpen.apply(this, arguments); updateBSDiscountSection(); };
-}
-// Ensure language containers are hidden on page load
-window.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('transcription-languages-container').style.display = 'none';
-    document.getElementById('translation-languages-container').style.display = 'none';
-    // Hide translation container unless transcription is checked
-    var transcription = document.getElementById('transcription');
-    var translationContainer = document.getElementById('translation-container');
-    if (translationContainer && transcription && !transcription.checked) {
-        translationContainer.style.display = 'none';
-    }
-});
-</script>
+            function updateBSDiscountSection() {
+                var bsSection = document.getElementById("bs-discount-section");
+                var bsAudience = document.getElementById("bs-audience");
+                if (bsSection && bsAudience) {
+                    bsSection.style.display = bsAudience.checked ? "" : "none";
+                }
+            }
+            function toggleTranslationOption() {
+                var transcription = document.getElementById("transcription");
+                var translationContainer = document.getElementById(
+                    "translation-container",
+                );
+                if (transcription && translationContainer) {
+                    translationContainer.style.display = transcription.checked
+                        ? ""
+                        : "none";
+                }
+            }
+            function toggleTranscriptionLanguages() {
+                var transcription = document.getElementById("transcription");
+                var transcriptionLanguagesContainer = document.getElementById(
+                    "transcription-languages-container",
+                );
+                if (transcriptionLanguagesContainer && transcription) {
+                    transcriptionLanguagesContainer.style.display =
+                        transcription.checked ? "" : "none";
+                }
+            }
+            function toggleTranslationLanguages() {
+                var translation = document.getElementById("translation");
+                var translationLanguagesContainer = document.getElementById(
+                    "translation-languages-container",
+                );
+                if (translationLanguagesContainer && translation) {
+                    translationLanguagesContainer.style.display =
+                        translation.checked ? "" : "none";
+                }
+            }
+            // Call this when opening the modal
+            if (window.openAdvancedDiscounts) {
+                var origOpen = window.openAdvancedDiscounts;
+                window.openAdvancedDiscounts = function () {
+                    origOpen.apply(this, arguments);
+                    updateBSDiscountSection();
+                };
+            }
+            // Ensure language containers are hidden on page load
+            window.addEventListener("DOMContentLoaded", function () {
+                document.getElementById(
+                    "transcription-languages-container",
+                ).style.display = "none";
+                document.getElementById(
+                    "translation-languages-container",
+                ).style.display = "none";
+                // Hide translation container unless transcription is checked
+                var transcription = document.getElementById("transcription");
+                var translationContainer = document.getElementById(
+                    "translation-container",
+                );
+                if (
+                    translationContainer &&
+                    transcription &&
+                    !transcription.checked
+                ) {
+                    translationContainer.style.display = "none";
+                }
+            });
+        </script>
     </body>
 </html>

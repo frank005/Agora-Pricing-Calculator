@@ -120,7 +120,8 @@ select:focus {
     align-items: center;
     margin-bottom: 20px;
     text-align: left;
-    height: 25px;
+    /* height: 25px; */
+    height: 34px;
     vertical-align: middle;
     justify-content: center;
 }
@@ -271,7 +272,7 @@ select:focus {
     font-size: 14px;
     font-weight: bold;
     color: white;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
     transition: all 0.3s ease;
     text-align: center;
     line-height: 1.2;
@@ -282,8 +283,8 @@ select:focus {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, #4CAF50, #45a049);
-    border-color: #4CAF50;
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    border-color: #4caf50;
     z-index: 1;
 }
 .square-fullhd {
@@ -292,8 +293,8 @@ select:focus {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, #2196F3, #1976D2);
-    border-color: #2196F3;
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    border-color: #2196f3;
     z-index: 2;
 }
 .square-2k {
@@ -302,8 +303,8 @@ select:focus {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, #FF9800, #F57C00);
-    border-color: #FF9800;
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    border-color: #ff9800;
     z-index: 3;
 }
 .square-2kplus {
@@ -312,12 +313,12 @@ select:focus {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, #E91E63, #C2185B);
-    border-color: #E91E63;
+    background: linear-gradient(135deg, #e91e63, #c2185b);
+    border-color: #e91e63;
     z-index: 4;
 }
 .square-active {
-    box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
     transform: translate(-50%, -50%) scale(1.1);
 }
 .square-labels {
@@ -400,4 +401,4 @@ input:disabled {
     margin-left: 8px;
     vertical-align: middle;
     border-left: 3px solid #667eea;
-} 
+}
