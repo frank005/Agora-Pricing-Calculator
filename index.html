@@ -356,6 +356,20 @@
                     >
                         Export to PDF
                     </button>
+                    <button
+                        id="export-csv-btn"
+                        class="button"
+                        style="
+                            background: #2b6cb0;
+                            color: #fff;
+                            width: auto;
+                            padding: 10px 20px;
+                            font-size: 15px;
+                            margin-left: 10px;
+                        "
+                    >
+                        Export to CSV
+                    </button>
                 </div>
             </div>
         </div>
@@ -395,417 +409,473 @@
                     </button>
                 </div>
                 <div class="popup-body">
+                    <!-- Interactive Live Streaming Section -->
                     <div class="discount-section">
-                        <h4>Master Discount</h4>
-                        <p
-                            style="
-                                color: #666;
-                                font-size: 14px;
-                                margin-bottom: 20px;
-                            "
-                        >
-                            Set a master discount that will be applied to all
-                            tiers by default. You can then override individual
-                            tiers below.
+                        <h4>Interactive Live Streaming (RTC)</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+                            Configure discounts for hosts and interactive audience members.
                         </p>
+                        
+                        <!-- Master Discount -->
+                        <div class="subsection">
+                            <h5>Master Discount</h5>
+                            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                                Set a master discount that will be applied to all RTC tiers by default.
+                            </p>
+                            <div class="tier-discount-item">
+                                <label for="master-discount">Master Discount (%):</label>
+                                <input
+                                    type="number"
+                                    id="master-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                    onchange="updateTierDiscounts()"
+                                />
+                                <span class="tier-info">Applied to all RTC tiers by default</span>
+                            </div>
+                        </div>
 
-                        <div class="tier-discount-item">
-                            <label for="master-discount"
-                                >Master Discount (%):</label
-                            >
-                            <input
-                                type="number"
-                                id="master-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                                onchange="updateTierDiscounts()"
-                            />
-                            <span class="tier-info"
-                                >Applied to all tiers by default</span
-                            >
+                        <!-- Tiered Discount Structure -->
+                        <div class="subsection">
+                            <h5>Tiered Discount Structure</h5>
+                            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                                Configure volume-based discounts for different usage tiers.
+                            </p>
+                            <div class="tier-discount-item">
+                                <input
+                                    type="checkbox"
+                                    id="use-tiered-discounts"
+                                    onchange="toggleTieredDiscounts()"
+                                />
+                                <label for="use-tiered-discounts">Use Advanced Tiered Discounts</label>
+                            </div>
+                            <div id="tiered-discount-fields" style="display: none;">
+                                <div class="tier-discount-item">
+                                    <label for="sessions-per-month"># of Sessions per Month:</label>
+                                    <input type="number" id="sessions-per-month" min="1" value="1" class="text-input" style="width: 100px;" />
+                                </div>
+                                <div style="margin-top: 15px;">
+                                    <table class="tier-table" style="width: 100%; margin-bottom: 15px;">
+                                        <thead>
+                                            <tr>
+                                                <th>Tier</th>
+                                                <th>From (k min)</th>
+                                                <th>To (k min)</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tier-table-body">
+                                            <!-- Tier rows will be dynamically generated by JS -->
+                                        </tbody>
+                                    </table>
+                                    <button type="button" class="button" id="add-tier-btn">Add Tier</button>
+                                </div>
+                                <div style="margin-top: 25px;">
+                                    <div style="font-weight: bold; margin-bottom: 8px;">Discounts per Resolution Tier</div>
+                                    <table class="tier-table" id="resolution-discount-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Resolution</th>
+                                                <!-- Tier headers dynamically generated by JS -->
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr data-res="audio">
+                                                <td>Audio Only</td>
+                                                <!-- Discount inputs dynamically generated by JS -->
+                                            </tr>
+                                            <tr data-res="hd">
+                                                <td>HD Video</td>
+                                            </tr>
+                                            <tr data-res="fullhd">
+                                                <td>Full HD Video</td>
+                                            </tr>
+                                            <tr data-res="2k">
+                                                <td>2K Video</td>
+                                            </tr>
+                                            <tr data-res="2kplus">
+                                                <td>2K+ Video</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Individual Resolution Discounts -->
+                        <div class="subsection" id="simple-discount-fields">
+                            <h5>Individual Resolution Discounts</h5>
+                            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                                Set flat discounts for each resolution tier (used when advanced tiered discounts are disabled).
+                            </p>
+                            <div class="tier-discount-item">
+                                <label for="audio-discount">Audio Only:</label>
+                                <input
+                                    type="number"
+                                    id="audio-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info">Base: $0.99/1,000 min</span>
+                            </div>
+                            <div class="tier-discount-item">
+                                <label for="hd-discount">HD Video:</label>
+                                <input
+                                    type="number"
+                                    id="hd-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info">Base: $3.99/1,000 min</span>
+                            </div>
+                            <div class="tier-discount-item">
+                                <label for="fullhd-discount">Full HD Video:</label>
+                                <input
+                                    type="number"
+                                    id="fullhd-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info">Base: $8.99/1,000 min</span>
+                            </div>
+                            <div class="tier-discount-item">
+                                <label for="2k-discount">2K Video:</label>
+                                <input
+                                    type="number"
+                                    id="2k-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info">Base: $15.99/1,000 min</span>
+                            </div>
+                            <div class="tier-discount-item">
+                                <label for="2kplus-discount">2K+ Video:</label>
+                                <input
+                                    type="number"
+                                    id="2kplus-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info">Base: $35.99/1,000 min</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="discount-section">
-                        <h4>Resolution Tier Discounts</h4>
-                        <p
-                            style="
-                                color: #666;
-                                font-size: 14px;
-                                margin-bottom: 20px;
-                            "
-                        >
-                            Set individual discounts for each resolution tier.
-                            The master discount will be applied by default, but
-                            you can override each tier individually.
-                        </p>
-
-                        <div class="tier-discount-item">
-                            <label for="audio-discount">Audio Only:</label>
-                            <input
-                                type="number"
-                                id="audio-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info">Base: $0.99/1,000 min</span>
-                        </div>
-
-                        <div class="tier-discount-item">
-                            <label for="hd-discount">HD Video:</label>
-                            <input
-                                type="number"
-                                id="hd-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info">Base: $3.99/1,000 min</span>
-                        </div>
-
-                        <div class="tier-discount-item">
-                            <label for="fullhd-discount">Full HD Video:</label>
-                            <input
-                                type="number"
-                                id="fullhd-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info">Base: $8.99/1,000 min</span>
-                        </div>
-
-                        <div class="tier-discount-item">
-                            <label for="2k-discount">2K Video:</label>
-                            <input
-                                type="number"
-                                id="2k-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info"
-                                >Base: $15.99/1,000 min</span
-                            >
-                        </div>
-
-                        <div class="tier-discount-item">
-                            <label for="2kplus-discount">2K+ Video:</label>
-                            <input
-                                type="number"
-                                id="2kplus-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info"
-                                >Base: $35.99/1,000 min</span
-                            >
-                        </div>
-                    </div>
-
-                    <div class="discount-section">
-                        <h4>AINS Discount</h4>
-                        <p
-                            style="
-                                color: #666;
-                                font-size: 14px;
-                                margin-bottom: 20px;
-                            "
-                        >
-                            Set a separate discount for AINS (Audio Intelligence
-                            Noise Suppression).
-                        </p>
-
-                        <div class="tier-discount-item">
-                            <label for="ains-discount">AINS:</label>
-                            <input
-                                type="number"
-                                id="ains-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info"
-                                >Base: $0.59/1,000 min per host</span
-                            >
-                        </div>
-                    </div>
-                    <!-- Transcription Discount -->
-                    <div class="discount-section">
-                        <h4>Transcription & Translation Discounts</h4>
-                        <p
-                            style="
-                                color: #666;
-                                font-size: 14px;
-                                margin-bottom: 20px;
-                            "
-                        >
-                            Set discounts for Real-Time Speech-To-Text and
-                            Translation services.
-                        </p>
-                        <div class="tier-discount-item">
-                            <label for="transcription-discount"
-                                >Transcription:</label
-                            >
-                            <input
-                                type="number"
-                                id="transcription-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info"
-                                >Base: $16.99/1,000 min per host</span
-                            >
-                        </div>
-                        <div class="tier-discount-item">
-                            <label for="translation-discount"
-                                >Translation:</label
-                            >
-                            <input
-                                type="number"
-                                id="translation-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info"
-                                >Base: $8.99/1,000 min per host</span
-                            >
-                        </div>
-                    </div>
+                    <!-- Broadcast Streaming Section -->
                     <div id="bs-discount-section" class="discount-section">
-                        <h4>Broadcast Streaming Audience Discounts</h4>
-                        <p
-                            style="
-                                color: #666;
-                                font-size: 14px;
-                                margin-bottom: 20px;
-                            "
-                        >
-                            Set individual discounts for broadcast streaming
-                            audience tiers.
+                        <h4>Broadcast Streaming</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+                            Configure discounts for broadcast streaming audience members.
                         </p>
-                        <div class="tier-discount-item">
-                            <label for="bs-audio-discount">Audio Only:</label>
-                            <input
-                                type="number"
-                                id="bs-audio-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info">Base: $0.59/1,000 min</span>
+                        
+                        <!-- BS Tiered Discount Structure -->
+                        <div class="subsection" id="bs-tiered-discount-section" style="display:none;">
+                            <h5>Tiered Discount Structure</h5>
+                            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                                Configure volume-based discounts for broadcast streaming usage tiers.
+                            </p>
+                            <div class="tier-discount-item">
+                                <input
+                                    type="checkbox"
+                                    id="use-bs-tiered-discounts"
+                                    onchange="toggleBSTieredDiscounts()"
+                                />
+                                <label for="use-bs-tiered-discounts">Use Advanced Tiered Discounts</label>
+                            </div>
+                            <div id="bs-tiered-discount-fields" style="display: none;">
+                                <div style="margin-top: 15px;">
+                                    <table class="tier-table" style="width: 100%; margin-bottom: 15px;">
+                                        <thead>
+                                            <tr>
+                                                <th>Tier</th>
+                                                <th>From (k min)</th>
+                                                <th>To (k min)</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="bs-tier-table-body">
+                                            <!-- BS Tier rows will be dynamically generated by JS -->
+                                        </tbody>
+                                    </table>
+                                    <button type="button" class="button" id="add-bs-tier-btn">Add Tier</button>
+                                </div>
+                                <div style="margin-top: 25px;">
+                                    <div style="font-weight: bold; margin-bottom: 8px;">Discounts per Resolution Tier</div>
+                                    <table class="tier-table" id="bs-resolution-discount-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Resolution</th>
+                                                <!-- BS Tier headers dynamically generated by JS -->
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr data-res="audio">
+                                                <td>Audio Only</td>
+                                                <!-- Discount inputs dynamically generated by JS -->
+                                            </tr>
+                                            <tr data-res="hd">
+                                                <td>HD Video</td>
+                                            </tr>
+                                            <tr data-res="fullhd">
+                                                <td>Full HD Video</td>
+                                            </tr>
+                                            <tr data-res="2k">
+                                                <td>2K Video</td>
+                                            </tr>
+                                            <tr data-res="2kplus">
+                                                <td>2K+ Video</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-                        <div class="tier-discount-item">
-                            <label for="bs-hd-discount">HD Video:</label>
-                            <input
-                                type="number"
-                                id="bs-hd-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info">Base: $1.99/1,000 min</span>
-                        </div>
-                        <div class="tier-discount-item">
-                            <label for="bs-fullhd-discount"
-                                >Full HD Video:</label
-                            >
-                            <input
-                                type="number"
-                                id="bs-fullhd-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info">Base: $4.59/1,000 min</span>
-                        </div>
-                        <div class="tier-discount-item">
-                            <label for="bs-2k-discount">2K Video:</label>
-                            <input
-                                type="number"
-                                id="bs-2k-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info">Base: $7.99/1,000 min</span>
-                        </div>
-                        <div class="tier-discount-item">
-                            <label for="bs-2kplus-discount">2K+ Video:</label>
-                            <input
-                                type="number"
-                                id="bs-2kplus-discount"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                class="text-input"
-                            />
-                            <span class="tier-info"
-                                >Base: $17.99/1,000 min</span
-                            >
+
+                        <!-- BS Individual Resolution Discounts -->
+                        <div class="subsection" id="bs-simple-discount-fields">
+                            <h5>Individual Resolution Discounts</h5>
+                            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                                Set flat discounts for broadcast streaming resolution tiers (used when advanced tiered discounts are disabled).
+                            </p>
+                            <div class="tier-discount-item">
+                                <label for="bs-audio-discount">Audio Only:</label>
+                                <input
+                                    type="number"
+                                    id="bs-audio-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info">Base: $0.59/1,000 min</span>
+                            </div>
+                            <div class="tier-discount-item">
+                                <label for="bs-hd-discount">HD Video:</label>
+                                <input
+                                    type="number"
+                                    id="bs-hd-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info">Base: $1.99/1,000 min</span>
+                            </div>
+                            <div class="tier-discount-item">
+                                <label for="bs-fullhd-discount">Full HD Video:</label>
+                                <input
+                                    type="number"
+                                    id="bs-fullhd-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info">Base: $4.59/1,000 min</span>
+                            </div>
+                            <div class="tier-discount-item">
+                                <label for="bs-2k-discount">2K Video:</label>
+                                <input
+                                    type="number"
+                                    id="bs-2k-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info">Base: $7.99/1,000 min</span>
+                            </div>
+                            <div class="tier-discount-item">
+                                <label for="bs-2kplus-discount">2K+ Video:</label>
+                                <input
+                                    type="number"
+                                    id="bs-2kplus-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info">Base: $17.99/1,000 min</span>
+                            </div>
                         </div>
                     </div>
 
+                    <!-- Additional Services Section -->
                     <div class="discount-section">
-                        <h4>Recording Discounts</h4>
-                        <p
-                            style="
-                                color: #666;
-                                font-size: 14px;
-                                margin-bottom: 20px;
-                            "
-                        >
-                            Set individual discounts for recording services.
+                        <h4>Additional Services</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+                            Configure discounts for additional services like AINS, transcription, translation, and recording.
                         </p>
-                        <div class="tier-discount-item">
-                            <input
-                                type="checkbox"
-                                id="recording-advanced-discounts"
-                                onchange="toggleRecordingDiscounts()"
-                            />
-                            <label for="recording-advanced-discounts"
-                                >Enable Advanced Recording Discounts</label
-                            >
+
+                        <!-- AINS Discount -->
+                        <div class="subsection">
+                            <h5>AINS (Audio Intelligence Noise Suppression)</h5>
+                            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                                Set discount for AINS service.
+                            </p>
+                            <div class="tier-discount-item">
+                                <label for="ains-discount">AINS Discount (%):</label>
+                                <input
+                                    type="number"
+                                    id="ains-discount"
+                                    placeholder="0"
+                                    min="0"
+                                    max="100"
+                                    class="text-input"
+                                />
+                                <span class="tier-info">Base: $0.59/1,000 min per host</span>
+                            </div>
                         </div>
-                        <div
-                            id="recording-discount-fields"
-                            style="display: none"
-                        >
-                            <div style="margin-bottom: 10px; font-weight: bold">
-                                Cloud Recording Tiers
-                            </div>
+
+                        <!-- Transcription & Translation Discounts -->
+                        <div class="subsection">
+                            <h5>Transcription & Translation</h5>
+                            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                                Set discounts for Real-Time Speech-To-Text and Translation services.
+                            </p>
                             <div class="tier-discount-item">
-                                <label for="cloud-audio-discount"
-                                    >Audio Only:</label
-                                >
+                                <label for="transcription-discount">Transcription Discount (%):</label>
                                 <input
                                     type="number"
-                                    id="cloud-audio-discount"
+                                    id="transcription-discount"
                                     placeholder="0"
                                     min="0"
                                     max="100"
                                     class="text-input"
                                 />
-                                <span class="tier-info"
-                                    >Base: $1.49/1,000 min</span
-                                >
+                                <span class="tier-info">Base: $16.99/1,000 min per host</span>
                             </div>
                             <div class="tier-discount-item">
-                                <label for="cloud-hd-discount">HD Video:</label>
+                                <label for="translation-discount">Translation Discount (%):</label>
                                 <input
                                     type="number"
-                                    id="cloud-hd-discount"
+                                    id="translation-discount"
                                     placeholder="0"
                                     min="0"
                                     max="100"
                                     class="text-input"
                                 />
-                                <span class="tier-info"
-                                    >Base: $5.99/1,000 min</span
-                                >
+                                <span class="tier-info">Base: $8.99/1,000 min per host</span>
                             </div>
+                        </div>
+
+                        <!-- Recording Discounts -->
+                        <div class="subsection">
+                            <h5>Recording Services</h5>
+                            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                                Set discounts for recording services.
+                            </p>
                             <div class="tier-discount-item">
-                                <label for="cloud-fullhd-discount"
-                                    >Full HD Video:</label
-                                >
                                 <input
-                                    type="number"
-                                    id="cloud-fullhd-discount"
-                                    placeholder="0"
-                                    min="0"
-                                    max="100"
-                                    class="text-input"
+                                    type="checkbox"
+                                    id="recording-advanced-discounts"
+                                    onchange="toggleRecordingDiscounts()"
                                 />
-                                <span class="tier-info"
-                                    >Base: $13.49/1,000 min</span
-                                >
+                                <label for="recording-advanced-discounts">Enable Advanced Recording Discounts</label>
                             </div>
-                            <div class="tier-discount-item">
-                                <label for="cloud-2k-discount">2K Video:</label>
-                                <input
-                                    type="number"
-                                    id="cloud-2k-discount"
-                                    placeholder="0"
-                                    min="0"
-                                    max="100"
-                                    class="text-input"
-                                />
-                                <span class="tier-info"
-                                    >Base: $23.99/1,000 min</span
-                                >
-                            </div>
-                            <div class="tier-discount-item">
-                                <label for="cloud-2kplus-discount"
-                                    >2K+ Video:</label
-                                >
-                                <input
-                                    type="number"
-                                    id="cloud-2kplus-discount"
-                                    placeholder="0"
-                                    min="0"
-                                    max="100"
-                                    class="text-input"
-                                />
-                                <span class="tier-info"
-                                    >Base: $53.99/1,000 min</span
-                                >
-                            </div>
-                            <div
-                                style="
-                                    margin-bottom: 10px;
-                                    font-weight: bold;
-                                    margin-top: 20px;
-                                "
-                            >
-                                Web Page Recording Tiers
-                            </div>
-                            <div class="tier-discount-item">
-                                <label for="web-hd-discount">HD (720p):</label>
-                                <input
-                                    type="number"
-                                    id="web-hd-discount"
-                                    placeholder="0"
-                                    min="0"
-                                    max="100"
-                                    class="text-input"
-                                />
-                                <span class="tier-info"
-                                    >Base: $14/1,000 min</span
-                                >
-                            </div>
-                            <div class="tier-discount-item">
-                                <label for="web-fullhd-discount"
-                                    >Full HD (1080p):</label
-                                >
-                                <input
-                                    type="number"
-                                    id="web-fullhd-discount"
-                                    placeholder="0"
-                                    min="0"
-                                    max="100"
-                                    class="text-input"
-                                />
-                                <span class="tier-info"
-                                    >Base: $28/1,000 min</span
-                                >
+                            <div id="recording-discount-fields" style="display: none">
+                                <div style="margin-bottom: 10px; font-weight: bold; margin-top: 15px;">
+                                    Cloud Recording Tiers
+                                </div>
+                                <div class="tier-discount-item">
+                                    <label for="cloud-audio-discount">Audio Only:</label>
+                                    <input
+                                        type="number"
+                                        id="cloud-audio-discount"
+                                        placeholder="0"
+                                        min="0"
+                                        max="100"
+                                        class="text-input"
+                                    />
+                                    <span class="tier-info">Base: $1.49/1,000 min</span>
+                                </div>
+                                <div class="tier-discount-item">
+                                    <label for="cloud-hd-discount">HD Video:</label>
+                                    <input
+                                        type="number"
+                                        id="cloud-hd-discount"
+                                        placeholder="0"
+                                        min="0"
+                                        max="100"
+                                        class="text-input"
+                                    />
+                                    <span class="tier-info">Base: $5.99/1,000 min</span>
+                                </div>
+                                <div class="tier-discount-item">
+                                    <label for="cloud-fullhd-discount">Full HD Video:</label>
+                                    <input
+                                        type="number"
+                                        id="cloud-fullhd-discount"
+                                        placeholder="0"
+                                        min="0"
+                                        max="100"
+                                        class="text-input"
+                                    />
+                                    <span class="tier-info">Base: $13.49/1,000 min</span>
+                                </div>
+                                <div class="tier-discount-item">
+                                    <label for="cloud-2k-discount">2K Video:</label>
+                                    <input
+                                        type="number"
+                                        id="cloud-2k-discount"
+                                        placeholder="0"
+                                        min="0"
+                                        max="100"
+                                        class="text-input"
+                                    />
+                                    <span class="tier-info">Base: $23.99/1,000 min</span>
+                                </div>
+                                <div class="tier-discount-item">
+                                    <label for="cloud-2kplus-discount">2K+ Video:</label>
+                                    <input
+                                        type="number"
+                                        id="cloud-2kplus-discount"
+                                        placeholder="0"
+                                        min="0"
+                                        max="100"
+                                        class="text-input"
+                                    />
+                                    <span class="tier-info">Base: $53.99/1,000 min</span>
+                                </div>
+                                <div style="margin-bottom: 10px; font-weight: bold; margin-top: 20px;">
+                                    Web Page Recording Tiers
+                                </div>
+                                <div class="tier-discount-item">
+                                    <label for="web-hd-discount">HD (720p):</label>
+                                    <input
+                                        type="number"
+                                        id="web-hd-discount"
+                                        placeholder="0"
+                                        min="0"
+                                        max="100"
+                                        class="text-input"
+                                    />
+                                    <span class="tier-info">Base: $14/1,000 min</span>
+                                </div>
+                                <div class="tier-discount-item">
+                                    <label for="web-fullhd-discount">Full HD (1080p):</label>
+                                    <input
+                                        type="number"
+                                        id="web-fullhd-discount"
+                                        placeholder="0"
+                                        min="0"
+                                        max="100"
+                                        class="text-input"
+                                    />
+                                    <span class="tier-info">Base: $28/1,000 min</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -826,6 +896,13 @@
         <script>
             function updateBSDiscountSection() {
                 var bsSection = document.getElementById("bs-discount-section");
+                var bsAudience = document.getElementById("bs-audience");
+                if (bsSection && bsAudience) {
+                    bsSection.style.display = bsAudience.checked ? "" : "none";
+                }
+            }
+            function updateBSTieredDiscountSection() {
+                var bsSection = document.getElementById("bs-tiered-discount-section");
                 var bsAudience = document.getElementById("bs-audience");
                 if (bsSection && bsAudience) {
                     bsSection.style.display = bsAudience.checked ? "" : "none";
@@ -862,12 +939,35 @@
                         translation.checked ? "" : "none";
                 }
             }
+            function toggleTieredDiscounts() {
+                var tieredDiscountsCheckbox = document.getElementById("use-tiered-discounts");
+                var tieredDiscountFields = document.getElementById("tiered-discount-fields");
+                var simpleDiscountFields = document.getElementById("simple-discount-fields");
+
+                if (tieredDiscountsCheckbox && tieredDiscountFields && simpleDiscountFields) {
+                    tieredDiscountFields.style.display = tieredDiscountsCheckbox.checked ? "" : "none";
+                    simpleDiscountFields.style.display = tieredDiscountsCheckbox.checked ? "none" : "";
+                }
+            }
+            function toggleBSTieredDiscounts() {
+                var bsTieredDiscountsCheckbox = document.getElementById("use-bs-tiered-discounts");
+                var bsTieredDiscountFields = document.getElementById("bs-tiered-discount-fields");
+                var bsSimpleDiscountFields = document.getElementById("bs-simple-discount-fields");
+
+                if (bsTieredDiscountsCheckbox && bsTieredDiscountFields && bsSimpleDiscountFields) {
+                    bsTieredDiscountFields.style.display = bsTieredDiscountsCheckbox.checked ? "" : "none";
+                    bsSimpleDiscountFields.style.display = bsTieredDiscountsCheckbox.checked ? "none" : "";
+                }
+            }
             // Call this when opening the modal
             if (window.openAdvancedDiscounts) {
                 var origOpen = window.openAdvancedDiscounts;
                 window.openAdvancedDiscounts = function () {
                     origOpen.apply(this, arguments);
                     updateBSDiscountSection();
+                    updateBSTieredDiscountSection();
+                    toggleTieredDiscounts(); // Ensure correct state on modal open
+                    toggleBSTieredDiscounts(); // Ensure correct state on modal open
                 };
             }
             // Ensure language containers are hidden on page load
@@ -890,6 +990,11 @@
                 ) {
                     translationContainer.style.display = "none";
                 }
+                // Ensure tiered discount fields are hidden on page load
+                document.getElementById("tiered-discount-fields").style.display = "none";
+                document.getElementById("simple-discount-fields").style.display = "";
+                document.getElementById("bs-tiered-discount-fields").style.display = "none";
+                document.getElementById("bs-simple-discount-fields").style.display = "";
             });
         </script>
     </body>
