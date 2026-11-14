@@ -1,6 +1,6 @@
 # Home Local Dashboard — Build Handoff Spec
 
-> **For the building agent:** Greenfield only. Create a **new empty repo or folder** named `home-dashboard/`. Do **not** use or modify any Agora Pricing Calculator files — that repo is unrelated; this markdown may have been temporarily hosted there by mistake. Prefer working vertical slices. **First milestone is HomeKit control from a browser, not a pretty UI.**
+> **For the building agent:** Greenfield only. Create a **new empty repo or folder** named `home-dashboard/`. Do **not** use or modify any Agora Pricing Calculator files — that repo is unrelated; this markdown may have been temporarily hosted there by mistake. Prefer working vertical slices. **Phase 0 proves HomeKit control through the Catalyst bridge; Phase 1 proves browser-based control through Fastify.**
 
 **Goal:** A Mac-hosted **iPad wall-panel website** (Safari / Add to Home Screen) that feels like a Rehome-style multi-face Apple Home view, while acting as an **additional controller** beside Apple Home — **no re-pairing and no migration** of existing HomeKit/Homebridge devices. **Home Assistant is optional** on the same Mac (alongside Homebridge + Plex) as an **integration provider** to reuse mature vendor integrations — not as the dashboard hub and not as a replacement for Apple Home.
 
@@ -42,7 +42,8 @@ Keep ~80% of the prior architecture. Decisions:
 | Optional HA as provider (not hub) | **Accept (addendum)** | Reuse integrations; do not import/re-pair HomeKit devices into HA |
 | Unified rooms (HK + HA tiles together) | **Accept** | Apple Home rooms primary; simple entity→room map |
 | SolarEdge SE6000H-US | **Accept — planned via HA Modbus TCP** | Official SolarEdge Modbus; **no cloud API**; read-only Energy Center; non-blocking if Modbus fails |
-| Dev Mac → Always-on Mac transfer | **Accept** | Build/sign on Dev Mac; run on Always-on Mac; **no full Xcode required** on Always-on; require `docs/TRANSFER.md` |
+| Dev Mac → Always-on Mac transfer | **Accept** | Build/sign on Dev Mac; verify Catalyst app on Always-on empirically before promising no extra tooling; require `docs/TRANSFER.md` |
+| Kasa energy via HA TP-Link | **Accept (exception)** | HomeKit keeps control; merge HA power/energy onto same tile; no duplicates |
 | Replace `?token=` URL auth with panel pairing + sessions | **Accept** | See §7 |
 | HTTPS on LAN | **Accept as target** | `mkcert` or Tailscale Serve; don’t block Phase 0 on TLS |
 | CloudFront remote access | **Design hook only** | LAN first |
@@ -66,7 +67,7 @@ Scene execution and live characteristic notifications should still be validated 
 2. **Do not use HA to import existing HomeKit accessories** if that changes their pairing. HA is for devices/services **not** already owned by the Catalyst HomeKit path.
 3. Dashboard is an **additional controller** alongside Apple Home — one cohesive UI, not “HomeKit app + HA app.”
 4. Prefer HomeKit when a device is already in Apple Home; avoid duplicate tiles.
-5. For non-HomeKit devices: **HomeKit? → else HA integration? → else direct adapter** (see §4A).
+5. For non-HomeKit devices: **HomeKit? → else HA integration? → else direct adapter** (see §4A). **Exception:** Kasa energy/power sensors may come from HA TP-Link while control stays on HomeKit — merge into one device, no duplicate tiles (see §5.10).
 6. Secrets stay on the Mac backend — never in the browser. Frontend must not connect to HA or HomeKit directly.
 7. Do not expose the Catalyst bridge (or raw HA) to the public internet.
 8. **Phase 0 unchanged** — Catalyst HomeKit POC only; no HA work in Phase 0.
@@ -97,7 +98,7 @@ Scene execution and live characteristic notifications should still be validated 
 | Device | Path | Notes |
 |---|---|---|
 | Philips Hue lights | HomeKit | Read + on/off + brightness (+ color if exposed) |
-| Kasa plugs | HomeKit | On/off |
+| Kasa plugs | HomeKit (control) | On/off; energy via HA TP-Link when available — §5.10 |
 | Hunter fan (native HomeKit) | HomeKit | On/off + rotationSpeed if present |
 | Bond Bridge + Hunter fans | HomeKit via Homebridge | Same characteristic model |
 | Dreo DR-HTF024S | HomeKit if exposed; else Dreo adapter later | Prefer HomeKit first |
@@ -124,7 +125,7 @@ Scene execution and live characteristic notifications should still be validated 
 | Google Nest | Evaluate **HA Nest (SDM)** | Direct SDM OAuth | No Homebridge Nest plugins |
 | Rachio SHVK001 | Evaluate **HA Rachio** | Smart Hose Timer cloud API | Hose timer, not classic zones |
 | SolarEdge SE6000H-US (no display) | **HA SolarEdge Modbus** (local TCP) | — | **No cloud API / installer account.** Planned, non-blocking |
-| Kasa energy monitors | **HomeKit** (already in Home) | — | Combine with solar in Energy Center |
+| Kasa energy monitors | **HomeKit control** + **HA TP-Link sensors** (exception) | — | Merge telemetry onto HomeKit device; Energy Center; no duplicate tiles |
 | Bond / Dreo | Prefer existing **HomeKit** | HA only if extra value | Avoid duplicate tiles |
 | Miko | Investigate later | — | After core |
 | myQ | — | — | **Deferred** |
@@ -274,11 +275,12 @@ Integrating Homecast / Prefab / Casa / HomeClaw is OK **if** POC checklist above
 
 For each device/service:
 
-1. Already works via **Catalyst HomeKit bridge**? → use that; do not also expose via HA.
+1. Already works via **Catalyst HomeKit bridge**? → use that; do not also expose via HA as a second tile.
 2. Else, does **Home Assistant** provide a reliable integration with the needed controls? → use HA adapter.
 3. Else, implement a **direct** manufacturer adapter only for a clear capability gap.
 4. Never require re-pairing Apple Home devices.
 5. HA HomeKit Bridge (exposing HA into Apple Home) is **out of scope** for now — optional future evaluation only.
+6. **Exception — Kasa energy:** HomeKit remains the control provider; HA TP-Link may supply power/energy sensors. Merge into the existing HomeKit device in the registry (§5.10).
 
 **Clear “evaluate HA before writing custom” list:** Sonos, Plex, Apple TV, Rachio SHVK001, Nest.  
 **Solar / energy (planned, not a feasibility phase):** SolarEdge via HA Modbus TCP only — see §5.9.  
@@ -387,9 +389,16 @@ Prefer HomeKit/Homebridge. HA only for extra value. Miko after core. myQ deferre
 **Dashboard behavior:**
 - **Read-only** monitoring only (no inverter control from the custom UI).
 - Expose available solar production, inverter status, power, and accumulated energy via the existing **Home Assistant adapter** (sensors → normalized devices/status tiles).
-- **Energy Center** face (or Modular Plus tiles): combine SolarEdge sensors with **Kasa energy-monitoring** plugs/devices already in HomeKit.
+- **Energy Center** face: SolarEdge sensors + merged Kasa energy telemetry (§5.10) share this face.
 - Whole-home consumption and grid import/export: show **only if** compatible metering data is available from the inverter/HA entities — otherwise omit; do not invent fake grid numbers.
 - **No panel-level / optimizer production** — local Modbus does not expose individual optimizer data; do not promise it.
+
+### 5.10 Kasa energy telemetry (intentional HomeKit-first exception)
+- **Control** (on/off and any HomeKit characteristics): always via Catalyst HomeKit bridge.
+- **Power / energy sensors** for compatible Kasa devices: allow Home Assistant’s **TP-Link** integration to supply telemetry.
+- In the normalized registry, **merge** HA energy sensors onto the existing HomeKit Kasa device (`physicalKey` / stable id) — one tile, enriched `state` (e.g. watts, kWh).
+- **Do not** create a second Kasa tile from HA.
+- Energy Center consumes this merged device together with SolarEdge.
 
 ---
 
@@ -406,7 +415,7 @@ Keep:
 Minimum test matrix: define **minimum iPadOS** (recommend 16+ or 17+) and verify Safari WebSocket + WebRTC + standalone PWA.
 
 Default faces ON: Home Modular Plus → Home Modular → Home Camera → Modular → Clock.  
-Picker adds: Photos, Analog, Flow, Weather, Calendar, Water, Music, Rooms.
+Picker adds: Photos, Analog, Flow, Weather, Calendar, Water, Music, Rooms, **Energy Center** (SolarEdge + Kasa energy).
 
 ---
 
@@ -454,19 +463,19 @@ The user has **two Macs**:
 
 ### Do you need “developer stuff” on the Always-on Mac?
 
-**No — not a full Xcode / Developer toolchain as a permanent install.**
+**Goal:** No permanent full Xcode / Developer toolchain on the Always-on Mac — **but do not promise a tooling-free transfer until it is empirically verified.**
 
 | Needed on Always-on Mac? | Item |
 |---|---|
-| **No** | Full Xcode for daily use |
+| **No (target)** | Full Xcode for daily use |
 | **No** | Writing code or managing certificates day-to-day |
 | **Yes (one-time on Dev Mac)** | Register Always-on Mac hardware UDID in the Apple Developer portal / Xcode Devices if using **development** signing for the HomeKit bridge |
 | **Yes** | Install the **already-signed** Catalyst HomeKit bridge `.app` built on the Dev Mac |
 | **Yes** | Same **iCloud account / Home** as the phone; open bridge once and approve **HomeKit** permission |
 | **Yes** | Node (or runtime) for the API, optional HA, git/copy of `home-dashboard`, `.env`, `launchd` / Login Items |
-| **Optional one-time** | Brief Xcode install **only if** the easiest way to push a development-signed app is “Run on that Mac” from the Dev machine — then Xcode can be removed later if desired |
+| **If transfer fails** | Temporarily use Xcode (or whatever path actually works) on/with the Always-on Mac to get a compatible signed build running — then document the real requirement in `TRANSFER.md` |
 
-**HomeKit signing reality:** Certificates and provisioning profiles are created on the **Dev Mac**. The Always-on Mac mainly needs to be an allowed destination for that signed build and must grant HomeKit access locally. Re-builds of the bridge happen on the Dev Mac; copy/reinstall the new `.app` onto the Always-on Mac when the bridge changes.
+**HomeKit signing reality:** Certificates and provisioning profiles are created on the **Dev Mac**. Compatibility of that signed Catalyst app on the Always-on Mac (provisioning, Gatekeeper, HomeKit entitlement, launch) must be **empirically verified before cutover**. Do not tell the user “no extra developer tooling needed” until that install has succeeded on the Always-on Mac. If verification fails, update `TRANSFER.md` with the minimal tooling that was required.
 
 **Everything else** (Fastify API, web UI, HA, configs, SolarEdge Modbus from that LAN, room maps) is normal software transfer — no Apple Developer account required on the Always-on Mac.
 
@@ -646,7 +655,7 @@ Hard rules:
 - Phase 2: fuller HomeKit rooms/faces.
 - Phase 3+: optional Home Assistant as a provider (REST+WS, long-lived token). First HA demo = Sonos or Plex on the SAME room page as HomeKit tiles. Evaluate HA for Apple TV, Rachio, Nest before writing custom adapters. Xbox before PS5. Direct adapters only for real capability gaps (e.g. Ring live view).
 - SolarEdge SE6000H-US: HA official Modbus TCP only (no cloud). Read-only Energy Center with Kasa energy monitors. Port 1502 / unit 1 / LAN IP. Planned integration — if Modbus fails, document and do not block the dashboard. No panel/optimizer-level production.
-- Dual Mac: develop on Dev Mac (Xcode/developer account); run production on Always-on Mac (Homebridge/Plex/HA). Always-on Mac does NOT need full Xcode permanently — only the signed bridge app + runtimes + one-time HomeKit permission. Before finish, write docs/TRANSFER.md (§15).
+- Dual Mac: develop on Dev Mac; run on Always-on Mac. Do not promise “no Xcode on Always-on” until signed Catalyst app is empirically verified there; then write docs/TRANSFER.md (§15).
 - myQ deferred. Do not build HA Lovelace as the product. Prefer fewer custom APIs — this should simplify, not explode scope.
 ```
 
@@ -662,7 +671,7 @@ Hard rules:
 
 **Gate D (usable wall panel):** iPad PWA swipes faces; unified rooms; entertainment/climate/water via HA-first (direct only if needed); on-demand cameras; ambient/night; adapters fail independently.
 
-**Gate E (transfer-ready):** `docs/TRANSFER.md` written; Always-on Mac can run without installing full Xcode; iPad pointed at Always-on Mac after cutover checklist passes.
+**Gate E (transfer-ready):** Signed Catalyst bridge empirically verified on Always-on Mac; `docs/TRANSFER.md` written with the real tooling outcome; iPad pointed at Always-on Mac after cutover checklist passes.
 
 ---
 
@@ -676,9 +685,10 @@ When implementation is ready to move to the house server, the building agent **m
 # Transfer: Dev Mac → Always-on Mac
 
 ## Answer up front
-- Do I need Xcode on the Always-on Mac? **No (not permanently).**
+- Do I need Xcode on the Always-on Mac permanently? **Target: No — but only say this after empirical install of the signed Catalyst app succeeded on that Mac.**
 - Do I need my Apple Developer account logged in there daily? **No.**
-- What do I need there? Signed HomeKit bridge app, Node (API), optional HA, .env, launchd/Login Items, same iCloud Home, one-time HomeKit permission.
+- What do I need there? Signed HomeKit bridge app (verified on this machine), Node (API), optional HA, .env, launchd/Login Items, same iCloud Home, one-time HomeKit permission.
+- If the copied .app will not launch or HomeKit is empty: document the exact signing/provisioning fix (may include a one-time Xcode step). Do not leave this as an assumption.
 
 ## 1. What was built on the Dev Mac
 - Bridge app path / version / signing method that worked (record from Xcode)
@@ -698,13 +708,17 @@ When implementation is ready to move to the house server, the building agent **m
 - [ ] Install launchd plists from deploy/launchd/
 - [ ] Add bridge to Login Items
 
-## 4. Always-on Mac first launch
+## 4. Always-on Mac first launch (empirical bridge verification — required before promising “no Xcode”)
 - [ ] Sign into same iCloud Home
 - [ ] Open bridge once → allow HomeKit
+- [ ] Confirm app launches without signing/Gatekeeper failure
+- [ ] Confirm homes/accessories appear (not empty)
 - [ ] Confirm bridge listens on 127.0.0.1 only
+- [ ] Toggle Hue or Kasa once on this Mac via bridge
 - [ ] Start API; curl /api/health
-- [ ] Optional: start/configure HA; SolarEdge Modbus to inverter LAN IP:1502
+- [ ] Optional: start/configure HA; SolarEdge Modbus to inverter LAN IP:1502; Kasa energy via HA TP-Link merged onto HomeKit devices
 - [ ] Confirm Homebridge + Plex still healthy
+- [ ] Record in this file whether extra developer tooling was needed
 
 ## 5. iPad cutover
 - [ ] Open http://<always-on-mac>.local:8787 (or HTTPS setup)
