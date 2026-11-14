@@ -41,6 +41,7 @@ Keep ~80% of the prior architecture. Decisions:
 | Nest | **Evaluate HA Nest (SDM) first** | Else direct SDM; never Homebridge Nest plugins |
 | Optional HA as provider (not hub) | **Accept (addendum)** | Reuse integrations; do not import/re-pair HomeKit devices into HA |
 | Unified rooms (HK + HA tiles together) | **Accept** | Apple Home rooms primary; simple entity→room map |
+| SolarEdge SE6000H-US | **Accept — planned via HA Modbus TCP** | Official SolarEdge Modbus; **no cloud API**; read-only Energy Center; non-blocking if Modbus fails |
 | Replace `?token=` URL auth with panel pairing + sessions | **Accept** | See §7 |
 | HTTPS on LAN | **Accept as target** | `mkcert` or Tailscale Serve; don’t block Phase 0 on TLS |
 | CloudFront remote access | **Design hook only** | LAN first |
@@ -121,6 +122,8 @@ Scene execution and live characteristic notifications should still be validated 
 | Ring cameras | Evaluate **HA Ring** | Direct Partner/unofficial | Do not assume HA gives unrestricted WebRTC live |
 | Google Nest | Evaluate **HA Nest (SDM)** | Direct SDM OAuth | No Homebridge Nest plugins |
 | Rachio SHVK001 | Evaluate **HA Rachio** | Smart Hose Timer cloud API | Hose timer, not classic zones |
+| SolarEdge SE6000H-US (no display) | **HA SolarEdge Modbus** (local TCP) | — | **No cloud API / installer account.** Planned, non-blocking |
+| Kasa energy monitors | **HomeKit** (already in Home) | — | Combine with solar in Energy Center |
 | Bond / Dreo | Prefer existing **HomeKit** | HA only if extra value | Avoid duplicate tiles |
 | Miko | Investigate later | — | After core |
 | myQ | — | — | **Deferred** |
@@ -277,6 +280,7 @@ For each device/service:
 5. HA HomeKit Bridge (exposing HA into Apple Home) is **out of scope** for now — optional future evaluation only.
 
 **Clear “evaluate HA before writing custom” list:** Sonos, Plex, Apple TV, Rachio SHVK001, Nest.  
+**Solar / energy (planned, not a feasibility phase):** SolarEdge via HA Modbus TCP only — see §5.9.  
 **Consoles:** Xbox first (established HA); PS5 optional/community.  
 **Ring:** evaluate HA for status/events/snapshots; keep direct path if live video is insufficient.
 
@@ -306,7 +310,7 @@ Auth: **long-lived access token** stored on Mac backend (`600` file or Keychain)
   - `media_player` → entertainment
   - `climate` → thermostat
   - `camera` → camera (no assumed unrestricted WebRTC)
-  - `sensor` / `binary_sensor` → status
+  - `sensor` / `binary_sensor` → status (includes SolarEdge Modbus power/energy sensors)
   - `button` → actions
 
 ### 4B.3 Unified rooms (required)
@@ -364,6 +368,28 @@ Via HA when available. **Xbox before PS5.** PS5 optional. Pioneer via HA Onkyo/P
 ### 5.8 Dreo / Bond / Miko
 Prefer HomeKit/Homebridge. HA only for extra value. Miko after core. myQ deferred.
 
+### 5.9 SolarEdge SE6000H-US + Energy Center (final decision)
+**Hardware:** SolarEdge SE6000H-US inverter **without a display**.
+
+**Integration path (locked):**
+- Use Home Assistant’s **official SolarEdge Modbus** integration (local Modbus TCP).
+- **Do not** pursue SolarEdge cloud API, installer accounts, or custom cloud integrations.
+- **Assume** local Modbus TCP is supported and will work for this inverter class; treat as a **planned** integration after HA is up — **not** a separate feasibility phase and **not** a blocker for the rest of the dashboard.
+- If the actual Modbus connection fails: **document the issue** and continue; Energy Center still shows whatever works (e.g. Kasa energy monitors).
+
+**Inverter setup assumptions (user / HA config):**
+1. Join inverter local Wi‑Fi access point and open its web UI.
+2. Enable **Modbus TCP**.
+3. Default port **1502**, default device/unit ID **1**.
+4. Point HA at the inverter’s **LAN IP** (after inverter is on home LAN).
+
+**Dashboard behavior:**
+- **Read-only** monitoring only (no inverter control from the custom UI).
+- Expose available solar production, inverter status, power, and accumulated energy via the existing **Home Assistant adapter** (sensors → normalized devices/status tiles).
+- **Energy Center** face (or Modular Plus tiles): combine SolarEdge sensors with **Kasa energy-monitoring** plugs/devices already in HomeKit.
+- Whole-home consumption and grid import/export: show **only if** compatible metering data is available from the inverter/HA entities — otherwise omit; do not invent fake grid numbers.
+- **No panel-level / optimizer production** — local Modbus does not expose individual optimizer data; do not promise it.
+
 ---
 
 ## 6. iPad UX (Rehome-style) — after Phase 0
@@ -371,9 +397,10 @@ Prefer HomeKit/Homebridge. HA only for extra value. Miko after core. myQ deferre
 Keep:
 - Swipeable full-screen faces + face picker per `panelId`
 - Large one-tap tiles; **unified room views** (HomeKit + HA tiles together, provider hidden)
-- Camera face; music/media (Sonos/Plex/ATV); clock/weather/calendar/photos; night mode
+- Camera face; music/media (Sonos/Plex/ATV); **Energy Center** (SolarEdge Modbus + Kasa energy); clock/weather/calendar/photos; night mode
 - Safari Add to Home Screen; adapter health badges
 - Frontend protocol-agnostic (only talks to normalized API — never HA or HomeKit directly)
+- Energy Center is optional in the face picker; solar Modbus failure must not blank other faces
 
 Minimum test matrix: define **minimum iPadOS** (recommend 16+ or 17+) and verify Safari WebSocket + WebRTC + standalone PWA.
 
@@ -471,6 +498,7 @@ Bridge (localhost): homes/rooms/accessories/characteristics/scenes as needed; AP
 - Apple TV, Rachio SHVK001, Nest via HA if adequate; else direct.
 - Samsung / Xbox (PS5 optional) via HA.
 - Entertainment / media faces using normalized devices.
+- **Planned:** enable HA SolarEdge Modbus (LAN IP, port 1502, unit 1); wire Energy Center (solar + Kasa energy). If Modbus fails, document and continue — do not block Phase 4/5.
 
 ### Phase 5 — Ring + specialty
 - HA Ring evaluation; direct live view if needed; one-cam then multi-cam with teardown.
@@ -570,6 +598,7 @@ Hard rules:
 - Phase 1: Fastify API + browser controls those same devices.
 - Phase 2: fuller HomeKit rooms/faces.
 - Phase 3+: optional Home Assistant as a provider (REST+WS, long-lived token). First HA demo = Sonos or Plex on the SAME room page as HomeKit tiles. Evaluate HA for Apple TV, Rachio, Nest before writing custom adapters. Xbox before PS5. Direct adapters only for real capability gaps (e.g. Ring live view).
+- SolarEdge SE6000H-US: HA official Modbus TCP only (no cloud). Read-only Energy Center with Kasa energy monitors. Port 1502 / unit 1 / LAN IP. Planned integration — if Modbus fails, document and do not block the dashboard. No panel/optimizer-level production.
 - myQ deferred. Do not build HA Lovelace as the product. Prefer fewer custom APIs — this should simplify, not explode scope.
 ```
 
