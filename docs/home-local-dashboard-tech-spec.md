@@ -42,6 +42,7 @@ Keep ~80% of the prior architecture. Decisions:
 | Optional HA as provider (not hub) | **Accept (addendum)** | Reuse integrations; do not import/re-pair HomeKit devices into HA |
 | Unified rooms (HK + HA tiles together) | **Accept** | Apple Home rooms primary; simple entity→room map |
 | SolarEdge SE6000H-US | **Accept — planned via HA Modbus TCP** | Official SolarEdge Modbus; **no cloud API**; read-only Energy Center; non-blocking if Modbus fails |
+| Dev Mac → Always-on Mac transfer | **Accept** | Build/sign on Dev Mac; run on Always-on Mac; **no full Xcode required** on Always-on; require `docs/TRANSFER.md` |
 | Replace `?token=` URL auth with panel pairing + sessions | **Accept** | See §7 |
 | HTTPS on LAN | **Accept as target** | `mkcert` or Tailscale Serve; don’t block Phase 0 on TLS |
 | CloudFront remote access | **Design hook only** | LAN first |
@@ -440,6 +441,43 @@ Validate and document:
 
 ---
 
+## 8A. Dual-Mac workflow (dev Mac → always-on Mac)
+
+The user has **two Macs**:
+
+| Machine | Role |
+|---|---|
+| **Dev Mac** | Has Apple Developer account / Xcode / day-to-day coding. Run Phase 0 HomeKit POC and builds here first. |
+| **Always-on Mac** | Already runs Homebridge + Plex (and will run HA + dashboard API + Catalyst bridge + serve the iPad). **Production home server.** |
+
+**Default plan:** Create and prove everything on the Dev Mac, then **transfer** the runnable stack to the Always-on Mac. The iPad should ultimately point at the Always-on Mac.
+
+### Do you need “developer stuff” on the Always-on Mac?
+
+**No — not a full Xcode / Developer toolchain as a permanent install.**
+
+| Needed on Always-on Mac? | Item |
+|---|---|
+| **No** | Full Xcode for daily use |
+| **No** | Writing code or managing certificates day-to-day |
+| **Yes (one-time on Dev Mac)** | Register Always-on Mac hardware UDID in the Apple Developer portal / Xcode Devices if using **development** signing for the HomeKit bridge |
+| **Yes** | Install the **already-signed** Catalyst HomeKit bridge `.app` built on the Dev Mac |
+| **Yes** | Same **iCloud account / Home** as the phone; open bridge once and approve **HomeKit** permission |
+| **Yes** | Node (or runtime) for the API, optional HA, git/copy of `home-dashboard`, `.env`, `launchd` / Login Items |
+| **Optional one-time** | Brief Xcode install **only if** the easiest way to push a development-signed app is “Run on that Mac” from the Dev machine — then Xcode can be removed later if desired |
+
+**HomeKit signing reality:** Certificates and provisioning profiles are created on the **Dev Mac**. The Always-on Mac mainly needs to be an allowed destination for that signed build and must grant HomeKit access locally. Re-builds of the bridge happen on the Dev Mac; copy/reinstall the new `.app` onto the Always-on Mac when the bridge changes.
+
+**Everything else** (Fastify API, web UI, HA, configs, SolarEdge Modbus from that LAN, room maps) is normal software transfer — no Apple Developer account required on the Always-on Mac.
+
+### Transfer rules for the building agent
+1. Develop and gate Phase 0–1 on the **Dev Mac** unless the user says otherwise.
+2. Before calling the project “ready for the house,” produce **`docs/TRANSFER.md`** (see §15) with exact copy/install/verify steps for the Always-on Mac.
+3. Never assume HomeKit permission or iCloud Home state copies with the files — always re-check on the Always-on Mac.
+4. Point the iPad at the Always-on Mac hostname/IP after cutover; keep Dev Mac as the build machine.
+
+---
+
 ## 9. API surface (minimum)
 
 ```
@@ -508,6 +546,12 @@ Bridge (localhost): homes/rooms/accessories/characteristics/scenes as needed; AP
 - Ambient faces, night mode, monitoring, error recovery.
 - Optional authenticated remote access design — LAN remains default.
 
+### Phase 7 — Package for Always-on Mac + write TRANSFER.md (required)
+- Produce a release-oriented layout: signed bridge app artifact notes, API/web build, example `launchd` plists, `.env.example` filled with Always-on-oriented comments.
+- Write **`docs/TRANSFER.md`** end-to-end (template in §15) so the user can move from Dev Mac → Always-on Mac without rediscovering steps.
+- Include a short **post-transfer verification checklist** (Hue/Kasa/Hunter via bridge on Always-on Mac; iPad opens PWA; HA optional).
+- **Gate:** TRANSFER.md exists and is accurate for this repo; user can follow it without reading the full tech spec.
+
 ---
 
 ## 11. Testing
@@ -548,10 +592,13 @@ home-dashboard/
     ring-setup.md
     homekit-bridge.md
     rachio-shvk001.md
+    TRANSFER.md    # REQUIRED before handoff — Dev Mac → Always-on Mac runbook
   apps/
     web/
     api/
   bridge/          # Catalyst project or submodule notes
+  deploy/
+    launchd/       # example plist templates for Always-on Mac
   data/            # panel configs, photos (gitignored secrets)
   .env.example
 ```
@@ -599,6 +646,7 @@ Hard rules:
 - Phase 2: fuller HomeKit rooms/faces.
 - Phase 3+: optional Home Assistant as a provider (REST+WS, long-lived token). First HA demo = Sonos or Plex on the SAME room page as HomeKit tiles. Evaluate HA for Apple TV, Rachio, Nest before writing custom adapters. Xbox before PS5. Direct adapters only for real capability gaps (e.g. Ring live view).
 - SolarEdge SE6000H-US: HA official Modbus TCP only (no cloud). Read-only Energy Center with Kasa energy monitors. Port 1502 / unit 1 / LAN IP. Planned integration — if Modbus fails, document and do not block the dashboard. No panel/optimizer-level production.
+- Dual Mac: develop on Dev Mac (Xcode/developer account); run production on Always-on Mac (Homebridge/Plex/HA). Always-on Mac does NOT need full Xcode permanently — only the signed bridge app + runtimes + one-time HomeKit permission. Before finish, write docs/TRANSFER.md (§15).
 - myQ deferred. Do not build HA Lovelace as the product. Prefer fewer custom APIs — this should simplify, not explode scope.
 ```
 
@@ -613,3 +661,63 @@ Hard rules:
 **Gate C (Phase 3 HA):** HA optional; Sonos or Plex via HA appears on the **same room** as HomeKit tiles; HA outage does not break HomeKit.
 
 **Gate D (usable wall panel):** iPad PWA swipes faces; unified rooms; entertainment/climate/water via HA-first (direct only if needed); on-demand cameras; ambient/night; adapters fail independently.
+
+**Gate E (transfer-ready):** `docs/TRANSFER.md` written; Always-on Mac can run without installing full Xcode; iPad pointed at Always-on Mac after cutover checklist passes.
+
+---
+
+## 15. Required deliverable: `docs/TRANSFER.md`
+
+When implementation is ready to move to the house server, the building agent **must** create `docs/TRANSFER.md` with the following sections filled in with **this project’s real paths, ports, and commands** (no placeholders like “TBD”).
+
+### Template the agent must complete
+
+```markdown
+# Transfer: Dev Mac → Always-on Mac
+
+## Answer up front
+- Do I need Xcode on the Always-on Mac? **No (not permanently).**
+- Do I need my Apple Developer account logged in there daily? **No.**
+- What do I need there? Signed HomeKit bridge app, Node (API), optional HA, .env, launchd/Login Items, same iCloud Home, one-time HomeKit permission.
+
+## 1. What was built on the Dev Mac
+- Bridge app path / version / signing method that worked (record from Xcode)
+- API + web build commands
+- Git commit / tag to deploy
+
+## 2. One-time Apple setup (from Dev Mac)
+- [ ] Always-on Mac UDID registered for development provisioning (if using dev signing)
+- [ ] Rebuild/re-sign bridge including that Mac if required
+- [ ] Export or copy the signed .app
+
+## 3. Copy to Always-on Mac
+- [ ] Clone/copy home-dashboard repo
+- [ ] Copy bridge .app to /Applications (or chosen path)
+- [ ] Create .env from .env.example (new secrets OK — don’t require Keychain clone)
+- [ ] npm/pnpm install + production build
+- [ ] Install launchd plists from deploy/launchd/
+- [ ] Add bridge to Login Items
+
+## 4. Always-on Mac first launch
+- [ ] Sign into same iCloud Home
+- [ ] Open bridge once → allow HomeKit
+- [ ] Confirm bridge listens on 127.0.0.1 only
+- [ ] Start API; curl /api/health
+- [ ] Optional: start/configure HA; SolarEdge Modbus to inverter LAN IP:1502
+- [ ] Confirm Homebridge + Plex still healthy
+
+## 5. iPad cutover
+- [ ] Open http://<always-on-mac>.local:8787 (or HTTPS setup)
+- [ ] Pair panel session
+- [ ] Add to Home Screen
+- [ ] Verify Hue / Kasa / Hunter fan
+- [ ] Retire Dev Mac as the runtime (keep it as build machine only)
+
+## 6. If something fails
+- HomeKit empty homes → iCloud Home + bridge permission + signing
+- API up, devices dead → bridge not running
+- iPad can’t connect → firewall / BIND_HOST / LAN token
+- SolarEdge missing → document Modbus failure; continue without blocking
+```
+
+The agent may expand TRANSFER.md with screenshots paths or exact plist filenames, but must keep the “Do I need developer stuff on the Always-on Mac?” answer at the top.
