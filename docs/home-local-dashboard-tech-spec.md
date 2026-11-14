@@ -24,7 +24,9 @@ Keep ~80% of the prior architecture. Decisions:
 
 | Recommendation | Decision | Notes |
 |---|---|---|
-| Validate Catalyst HomeKit bridge before UI polish | **Accept — now Phase 0** | Highest risk dependency |
+| Validate Catalyst HomeKit bridge before UI polish | **Accept — now Phase 0** | Bridge-only demo first; browser/API = Phase 1; no React in Phase 0 |
+| Scenes + live notifications block first demo | **Clarify — non-blocking** | Still validate; Hue/Kasa/Hunter fan enough for first proof |
+| Treat Developer ID as known-insufficient | **Clarify — verify in Xcode** | Record actual provisioning result; don’t assume |
 | Preserve all HomeKit/Homebridge pairings | **Accept (hard rule)** | Dashboard = extra controller only |
 | Expand inventory (Yale, Bond, Dreo, etc.) | **Accept** | Prefer HomeKit path when already exposed |
 | Apple TV / HomePod via pyatv (not HomeKit API) | **Accept** | Separate media adapters; don’t pretend they’re HMAccessory |
@@ -45,7 +47,11 @@ Keep ~80% of the prior architecture. Decisions:
 | Require Home Assistant | **Reject** | User’s 60+ devices already in HomeKit/Homebridge; HA is not easier |
 | Build full entertainment stack before Nest/Ring | **Partial reject** | Sonos + pyatv yes; Samsung/Fire/Pioneer wait |
 
-**First acceptance milestone (unchanged priority):** From a browser (ideally iPad Safari), discover and control an existing **Hue light**, **Kasa plug**, and **native HomeKit Hunter fan** through the Mac Catalyst bridge, **without modifying any HomeKit pairing**. Then build the dashboard.
+**First acceptance milestones (do not skip ahead to UI polish):**
+- **Phase 0 gate:** Catalyst bridge alone can discover and control existing **Hue**, **Kasa**, and **native HomeKit Hunter fan** (no pairing changes). Prove this with the bridge’s own minimal test UI, unit harness, or localhost curl against the bridge — **not** the React dashboard.
+- **Phase 1 gate:** Browser talks to the Fastify API, which proxies the bridge, and controls those **same** devices. Only then invest in faces/UX.
+
+Scene execution and live characteristic notifications should still be validated during Phase 0, but they are **non-blocking** for the first accessory-control demo (Hue + Kasa + Hunter fan is enough to prove feasibility).
 
 ---
 
@@ -215,18 +221,27 @@ Rules:
 Public HomeKit is not available to plain macOS scripts. Catalyst + entitlement + user auth is the way to see the **existing** home with no re-pairing.
 
 ### 4.2 Minimal POC acceptance (before dashboard UI)
-Signed Catalyst app must:
-1. Discover homes, rooms, accessories, scenes.
+
+**Blocking for Phase 0 demo (required):**
+1. Discover homes, rooms, accessories (and list scenes if present).
 2. Read state of a Philips Hue light.
 3. Toggle a Kasa plug.
 4. Control native HomeKit Hunter fan.
-5. Execute an existing HomeKit scene.
-6. Receive characteristic updates when devices change in Apple Home.
-7. Recover after app restart and after Mac sleep/wake.
-8. Confirm signing, entitlements, HomeKit auth prompt, and that **Developer ID-only** builds are insufficient (dev/App Store provisioning required).
+5. No HomeKit pairing changes.
+
+**Validate in Phase 0, but do not block the first demo:**
+6. Execute an existing HomeKit scene (optional for first demo).
+7. Receive characteristic updates when devices change in Apple Home (optional for first demo; still do before calling Phase 0 “complete”).
+8. Recover after app restart and after Mac sleep/wake (before Phase 1).
+
+**Signing / entitlements — verify in Xcode, do not assume:**
+9. Enable HomeKit capability, add usage description, run on this Mac, and **record what actually works**: development team provisioning, Mac Catalyst destination, entitlement presence, authorization prompt.
+10. Treat claims like “Developer ID-only cannot use HomeKit” as a **hypothesis to confirm**, not a pre-established fact. If a signing path fails, document the exact Xcode/signing error and the path that succeeded. The Catalyst bridge is the main platform-specific uncertainty in this project — resolve it empirically.
 
 ### 4.3 Lifecycle reality
 Do **not** assume a reliable fully headless HomeKit daemon. Start **foreground-capable** (menu bar / visible app). Document Login Item. Bridge listens on **127.0.0.1 only**; API proxies to it.
+
+**No React/Vite work in Phase 0.** Frontend effort waits until Phase 0 blocking controls work.
 
 ### 4.4 Characteristic handling
 - Enumerate services/characteristics from HomeKit metadata.
@@ -352,17 +367,18 @@ Bridge (localhost): homes/rooms/accessories/characteristics/scenes as needed; AP
 
 ## 10. Implementation phases (risk-first)
 
-### Phase 0 — HomeKit proof of concept (NO dashboard polish)
-- Sign Catalyst bridge; entitlements; auth prompt.
-- Discover rooms/accessories/scenes.
-- Read/write Hue, Kasa, Hunter fan; run a scene; subscribe to updates.
-- Restart + sleep/wake recovery tests.
-- **Gate:** first acceptance milestone (§0). Stop and report before Phase 1 UI.
+### Phase 0 — HomeKit proof of concept (NO frontend)
+- Create/sign Catalyst bridge in Xcode; verify entitlements/provisioning empirically (§4.2).
+- Discover rooms/accessories.
+- **Required demo:** read/write Hue, Kasa, Hunter fan via bridge (test UI or localhost HTTP on the bridge).
+- Also validate (non-blocking for first demo): scene execute, live characteristic notifications, restart + sleep/wake.
+- **Gate:** Phase 0 blocking controls work. Stop and report. Do not build React yet.
 
-### Phase 1 — Backend + thin UI foundation
-- Fastify API, device registry, session auth, WebSocket.
-- Minimal React shell: swipe faces stub + basic control tiles for proven HomeKit devices.
-- Clock face stub OK.
+### Phase 1 — Backend API + browser control of the same devices
+- Fastify API proxies localhost bridge; device registry; session auth; WebSocket.
+- Thin browser page (even a single debug view is fine) that toggles the same Hue / Kasa / Hunter fan through the API.
+- **Gate:** browser → API → bridge → real devices. Only after this, invest in Rehome faces.
+- Clock face / swipe shell may start here but must not delay the API control proof.
 
 ### Phase 2 — Full HomeKit integration
 - Lights, plugs, fans, locks (confirm unlock), scenes, Homebridge accessories.
@@ -390,14 +406,21 @@ Bridge (localhost): homes/rooms/accessories/characteristics/scenes as needed; AP
 ## 11. Testing
 
 ### Phase 0 manual gate
-- [ ] Hue read + toggle
+**Blocking demo:**
+- [ ] Hue read + toggle (via bridge, not React)
 - [ ] Kasa toggle
 - [ ] Hunter fan control
+- [ ] Zero pairing changes in Home app
+- [ ] Signing/entitlements path documented from actual Xcode result
+
+**Should validate before Phase 1 (non-blocking for first demo):**
 - [ ] Scene execute
 - [ ] Update when changed from Apple Home app
 - [ ] Restart bridge; still authorized; still controls
 - [ ] Sleep/wake; subscriptions recover
-- [ ] Zero pairing changes in Home app
+
+### Phase 1 manual gate
+- [ ] Same Hue / Kasa / Hunter fan controllable from a browser via the API
 
 ### Ongoing
 - Adapter isolation: kill Nest creds → HomeKit still works
@@ -457,16 +480,19 @@ Ignore any Agora/calculator repo context — irrelevant.
 Hard rules:
 - Do NOT install Home Assistant or re-pair any HomeKit/Homebridge devices.
 - Dashboard is an extra controller beside Apple Home.
-- Phase 0 FIRST: Mac Catalyst HomeKit bridge POC — Hue + Kasa + Hunter fan + scene + live updates + restart/sleep recovery. Stop for checkpoint before UI polish.
-- Then Phase 1+ per spec: Fastify API, session pairing auth (no long-lived ?token= URLs), Rehome-like iPad faces, Sonos + pyatv, Rachio SHVK001 Smart Hose Timer API, Nest SDM, Ring on-demand streams.
+- Phase 0 FIRST: Catalyst HomeKit bridge only (no React). Required demo = Hue + Kasa + Hunter fan. Scenes + live notifications = validate but non-blocking for that first demo. Verify signing/entitlements in Xcode; do not assume Developer ID vs other provisioning outcomes before testing.
+- Phase 1: Fastify API + browser controls those same devices. Then faces/UX.
+- Later: session auth, Rehome-like iPad faces, Sonos + pyatv, Rachio SHVK001, Nest SDM, Ring on-demand streams.
 - Samsung/Fire/Pioneer/Miko/myQ are backlog/deferred unless asked.
-- Prefer working end-to-end integration over a polished interface early.
+- Do not expand scope. Prefer working integration over polished UI early.
 ```
 
 ---
 
 ## 14. Success definition
 
-**Gate A (Phase 0):** Browser controls existing Hue, Kasa, and HomeKit Hunter fan via Catalyst bridge with no pairing changes.
+**Gate A (Phase 0):** Catalyst bridge controls existing Hue, Kasa, and HomeKit Hunter fan with no pairing changes (no React required).
 
-**Gate B (usable wall panel):** iPad PWA swipes faces; controls HomeKit rooms/scenes; Sonos; Rachio SHVK001; Nest thermostat; on-demand Ring/Nest camera; night/ambient faces; adapters fail independently; no HA required.
+**Gate B (Phase 1):** Browser controls those same devices through the API → bridge.
+
+**Gate C (usable wall panel):** iPad PWA swipes faces; rooms/scenes; Sonos; Rachio SHVK001; Nest; on-demand cameras; ambient/night; adapters fail independently; no HA required.
